@@ -1,0 +1,2 @@
+Store shapes in a container (vector)
+Use std::ifstream to read the config file
