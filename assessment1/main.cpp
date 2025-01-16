@@ -3,17 +3,17 @@
 #include <memory>
 #include <SFML/Graphics.hpp>
 
-class CustomShape
+class MovingLabeledShape
 {
     float mVelocityX, mVelocityY;
     std::shared_ptr<sf::Shape> mShape;
     std::shared_ptr<sf::Text> mShapeLabel;
 
 public:
-    CustomShape() {}
+    MovingLabeledShape() {}
 
-    CustomShape(float velocityX, float velocityY,
-                std::shared_ptr<sf::Shape> shape, std::shared_ptr<sf::Text> shapeLabel)
+    MovingLabeledShape(float velocityX, float velocityY,
+                       std::shared_ptr<sf::Shape> shape, std::shared_ptr<sf::Text> shapeLabel)
 
         : mVelocityX(velocityX),
           mVelocityY(velocityY),
@@ -25,12 +25,25 @@ public:
         sf::FloatRect labelRect = mShapeLabel->getLocalBounds();
 
         mShapeLabel->setPosition(shapePostiion.x + shapeRect.width / 2 - labelRect.width / 2,
-                                 shapePostiion.y + shapeRect.height / 2 - labelRect.height / 2);
+                                 shapePostiion.y + shapeRect.height / 2 - shapeLabel->getCharacterSize() / 2);
     }
 
-    void move()
+    void move(sf::Window &window)
     {
         sf::Vector2f currentShapePosition = mShape->getPosition();
+        sf::FloatRect shapeRect = mShape->getLocalBounds();
+
+        if (currentShapePosition.y < 0 ||                                   // figure top
+            currentShapePosition.y + shapeRect.height > window.getSize().y) // figure bottom
+        {
+            mVelocityY *= -1;
+        }
+
+        if (currentShapePosition.x < 0 ||                                  // figure left
+            currentShapePosition.x + shapeRect.width > window.getSize().x) // figure right
+        {
+            mVelocityX *= -1;
+        }
 
         mShape->setPosition(currentShapePosition.x + mVelocityX,
                             currentShapePosition.y + mVelocityY);
@@ -43,7 +56,7 @@ public:
 
     void draw(sf::RenderWindow &window)
     {
-        move();
+        move(window);
         window.draw(*mShape);
         window.draw(*mShapeLabel);
     }
@@ -94,7 +107,7 @@ int main()
         exit(-1);
     }
 
-    std::vector<CustomShape> shapes;
+    std::vector<MovingLabeledShape> shapes;
 
     while (fileIn >> rowIdentifier)
     {
@@ -122,7 +135,7 @@ int main()
                 circle->setPosition(positionX, positionY);
                 circle->setFillColor(sf::Color(colorR, colorG, colorB));
 
-                shapes.push_back(CustomShape(velocityX, velocityY, circle, text));
+                shapes.push_back(MovingLabeledShape(velocityX, velocityY, circle, text));
             }
             else if (rowIdentifier == "Rectangle")
             {
@@ -133,7 +146,7 @@ int main()
                 rect->setPosition(positionX, positionY);
                 rect->setFillColor(sf::Color(colorR, colorG, colorB));
 
-                shapes.push_back(CustomShape(velocityX, velocityY, rect, text));
+                shapes.push_back(MovingLabeledShape(velocityX, velocityY, rect, text));
             }
         }
         else
