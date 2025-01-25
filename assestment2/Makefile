@@ -10,7 +10,7 @@
 
 # define which compiler to use
 CXX := g++
-OUTPUT := sfmlgame
+OUTPUT := sfmlgame.out
 
 # if you need to manually specify your SFML install dir, do so here
 SFML_DIR := .
