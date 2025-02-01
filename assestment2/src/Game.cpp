@@ -248,26 +248,29 @@ void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity)
 // Systems
 void Game::sMovement()
 {
-    m_player->cTransform->velocity = {0, 0};
+    std::shared_ptr<CInput> playerInput = m_player->cInput;
+    Vec2 *playerVelocity = &m_player->cTransform->velocity;
 
-    if (m_player->cInput->up)
+    *playerVelocity = {0, 0};
+
+    if (playerInput->up)
     {
-        m_player->cTransform->velocity.y = -m_playerConfig.S;
+        playerVelocity->y = -m_playerConfig.S;
     }
 
-    if (m_player->cInput->down)
+    if (playerInput->down)
     {
-        m_player->cTransform->velocity.y = m_playerConfig.S;
+        playerVelocity->y = m_playerConfig.S;
     }
 
-    if (m_player->cInput->left)
+    if (playerInput->left)
     {
-        m_player->cTransform->velocity.x = -m_playerConfig.S;
+        playerVelocity->x = -m_playerConfig.S;
     }
 
-    if (m_player->cInput->right)
+    if (playerInput->right)
     {
-        m_player->cTransform->velocity.x = m_playerConfig.S;
+        playerVelocity->x = m_playerConfig.S;
     }
 
     auto size = m_window.getSize();
