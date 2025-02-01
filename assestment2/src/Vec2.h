@@ -1,5 +1,4 @@
 #pragma once
-
 class Vec2
 {
 public:
@@ -23,4 +22,9 @@ public:
     void operator/=(const float val);
 
     float dist(const Vec2 &rhs) const;
+
+    float module() const;
+    Vec2 normalize() const;
+
+    friend std::ostream &operator<<(std::ostream &os, const Vec2 &vec);
 };
