@@ -12,7 +12,7 @@ struct PlayerConfig
 };
 struct EnemyConfig
 {
-    int SR, CR, OR, OG, OB, OT, VMIN, VMAX, L, SI;
+    int SR, CR, OR, OG, OB, OT, VMIN, VMAX, L, SP;
     float SMIN, SMAX;
 };
 struct BulletConfig
@@ -55,6 +55,10 @@ class Game
     void spawnSmallEnemies(std::shared_ptr<Entity> entity);
     void spawnBullet(std::shared_ptr<Entity> entity, const Vec2 &mousePos);
     void spawnSpecialWeapon(std::shared_ptr<Entity> entity);
+
+    // Utility function to generate random int between a range
+    int random(int min, int max);
+    bool checkCollision(std::shared_ptr<Entity> entity1, std::shared_ptr<Entity> entity2);
 
 public:
     Game(const std::string &config); // constructor, takes the game config
