@@ -4,6 +4,8 @@
 
 #include "Game.h"
 
+constexpr double PI = 3.14159265358979323846;
+
 Game::Game(const std::string &config)
 {
     init(config);
@@ -210,12 +212,7 @@ void Game::spawnSmallEnemies(std::shared_ptr<Entity> e)
     int score = e->cScore->score * 2;
 
     float speed = e->cTransform->velocity.module();
-    float angle = 360 / vertexCount;
-    
-    std::cout << "Enemy Velocity Vector: " << e->cTransform->velocity << "\n";
-    std::cout << "Enemy Speed:" << speed << "\n";
-    std::cout << "Angle:" << angle << "\n";
-    
+    float angle = (2 * PI) / vertexCount;
 
     for (int i = 0; i < vertexCount; i++)
     {
@@ -381,14 +378,12 @@ void Game::sUserInput()
             if (event.mouseButton.button == sf::Mouse::Left)
             {
                 auto mouseEvent = event.mouseButton;
-                std::cout << "Left Mouse Button Clicked at (" << event.mouseButton.x << ", " << event.mouseButton.y << ") \n";
                 // call spawnBullet here
                 spawnBullet(m_player, Vec2(mouseEvent.x, mouseEvent.y));
             }
 
             if (event.mouseButton.button == sf::Mouse::Right)
             {
-                std::cout << "Right Mouse Button Clicked at (" << event.mouseButton.x << ", " << event.mouseButton.y << ") \n";
                 // call spawnSpecialWeapon here
                 spawnSpecialWeapon(m_player);
             }
