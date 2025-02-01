@@ -28,7 +28,7 @@ void Game::run()
         sUserInput();
         sRender();
 
-        if (m_paused)
+        if (!m_paused)
         {
             // increment the current frame
             // may need to be moved when pause implemented
@@ -149,7 +149,7 @@ void Game::spawnEnemy()
     int vertexCount = random(m_enemyConfig.VMIN, m_enemyConfig.VMAX);
 
     int speed = random(m_enemyConfig.SMIN, m_enemyConfig.SMAX);
-    int angle = random(0, 360);
+    float angle = random(0, 360) * (PI / 180.0f); // Use rads
 
     float velX = speed * cosf(angle);
     float velY = speed * sinf(angle);
@@ -270,10 +270,30 @@ void Game::sMovement()
         m_player->cTransform->velocity.x = m_playerConfig.S;
     }
 
+    auto size = m_window.getSize();
+
     for (auto &e : m_entities.getEntities())
     {
-        e->cTransform->pos.x += e->cTransform->velocity.x;
-        e->cTransform->pos.y += e->cTransform->velocity.y;
+        Vec2 *position = &e->cTransform->pos;
+        Vec2 *velocity = &e->cTransform->velocity;
+
+        position->x += velocity->x;
+        position->y += velocity->y;
+
+        if (e->tag() == "enemy" || e->tag() == "small enemy")
+        {
+            int rad = e->cShape->circle.getRadius();
+
+            if (position->x - rad < 0 || position->x + rad > size.x) // Left and right
+            {
+                velocity->x *= -1;
+            }
+
+            if (position->y - rad < 0 || position->y + rad > size.y) // Top and bot
+            {
+                velocity->y *= -1;
+            }
+        }
     }
 }
 
