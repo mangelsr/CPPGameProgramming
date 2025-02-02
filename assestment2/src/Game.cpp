@@ -1,3 +1,4 @@
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <math.h>
@@ -242,59 +243,99 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2 &target)
 
 void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity)
 {
-    // TODO: implement your own special weapon
+    sf::CircleShape *playerShape = &entity->cShape->circle;
+
+    int specialBulletCount = 8;
+    int size = 8; // Shape and collision size
+    int vertex = 3;
+    sf::Color fillColor = playerShape->getFillColor();
+    sf::Color outlineColor = playerShape->getOutlineColor();
+    int lifeSpan = 150; // Frames
+    int distanceToPlayer = 65;
+
+    Vec2 *playerVelocity = &entity->cTransform->velocity;
+    Vec2 *playerPosition = &entity->cTransform->pos;
+
+    float angleStep = (2 * PI) / specialBulletCount; // Use rads
+
+    for (int i = 0; i < specialBulletCount; i++)
+    {
+        float angle = angleStep * i;
+        float newX = playerPosition->x + distanceToPlayer * cosf(angle);
+        float newY = playerPosition->y + distanceToPlayer * sinf(angle);
+
+        auto specialBullet = m_entities.addEntity("special bullet");
+
+        specialBullet->cShape = std::make_shared<CShape>(
+            size, vertex, fillColor, outlineColor, 4);
+
+        specialBullet->cTransform = std::make_shared<CTransform>(
+            Vec2(newX, newY),
+            Vec2(0, 0), 0);
+
+        specialBullet->cTransform->velocity = *playerVelocity;
+
+        specialBullet->cCollision = std::make_shared<CCollision>(size);
+
+        specialBullet->cLifespan = std::make_shared<CLifespan>(lifeSpan);
+
+        specialBullet->cInput = std::make_shared<CInput>();
+    }
 }
 
 // Systems
 void Game::sMovement()
 {
-    std::shared_ptr<CInput> playerInput = m_player->cInput;
-    Vec2 *playerVelocity = &m_player->cTransform->velocity;
+    auto entities = m_entities.getEntities();
+    auto windowSize = m_window.getSize();
 
-    *playerVelocity = {0, 0};
-
-    if (playerInput->up)
+    for (auto &e : entities)
     {
-        playerVelocity->y = -m_playerConfig.S;
-    }
+        Vec2 *ePosition = &e->cTransform->pos;
+        Vec2 *eVelocity = &e->cTransform->velocity;
 
-    if (playerInput->down)
-    {
-        playerVelocity->y = m_playerConfig.S;
-    }
+        if (e->cInput != nullptr)
+        {
+            std::shared_ptr<CInput> eInput = e->cInput;
 
-    if (playerInput->left)
-    {
-        playerVelocity->x = -m_playerConfig.S;
-    }
+            *eVelocity = {0, 0};
 
-    if (playerInput->right)
-    {
-        playerVelocity->x = m_playerConfig.S;
-    }
+            if (eInput->up)
+            {
+                eVelocity->y = -m_playerConfig.S;
+            }
 
-    auto size = m_window.getSize();
+            if (eInput->down)
+            {
+                eVelocity->y = m_playerConfig.S;
+            }
 
-    for (auto &e : m_entities.getEntities())
-    {
-        Vec2 *position = &e->cTransform->pos;
-        Vec2 *velocity = &e->cTransform->velocity;
+            if (eInput->left)
+            {
+                eVelocity->x = -m_playerConfig.S;
+            }
 
-        position->x += velocity->x;
-        position->y += velocity->y;
+            if (eInput->right)
+            {
+                eVelocity->x = m_playerConfig.S;
+            }
+        }
+
+        ePosition->x += eVelocity->x;
+        ePosition->y += eVelocity->y;
 
         if (e->tag() == "enemy" || e->tag() == "small enemy")
         {
             int rad = e->cShape->circle.getRadius();
 
-            if (position->x - rad < 0 || position->x + rad > size.x) // Left and right
+            if (ePosition->x - rad < 0 || ePosition->x + rad > windowSize.x) // Left and right
             {
-                velocity->x *= -1;
+                eVelocity->x *= -1;
             }
 
-            if (position->y - rad < 0 || position->y + rad > size.y) // Top and bot
+            if (ePosition->y - rad < 0 || ePosition->y + rad > windowSize.y) // Top and bot
             {
-                velocity->y *= -1;
+                eVelocity->y *= -1;
             }
         }
     }
@@ -303,6 +344,8 @@ void Game::sMovement()
 void Game::sUserInput()
 {
     sf::Event event;
+    auto entities = m_entities.getEntities();
+
     while (m_window.pollEvent(event))
     {
         // this event triggers when the window is closed
@@ -317,16 +360,32 @@ void Game::sUserInput()
             switch (event.key.code)
             {
             case sf::Keyboard::W:
-                m_player->cInput->up = true;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->up = true;
+                }
                 break;
             case sf::Keyboard::A:
-                m_player->cInput->left = true;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->left = true;
+                }
                 break;
             case sf::Keyboard::S:
-                m_player->cInput->down = true;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->down = true;
+                }
                 break;
             case sf::Keyboard::D:
-                m_player->cInput->right = true;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->right = true;
+                }
                 break;
             case sf::Keyboard::P:
                 setPaused(!m_paused);
@@ -342,16 +401,32 @@ void Game::sUserInput()
             switch (event.key.code)
             {
             case sf::Keyboard::W:
-                m_player->cInput->up = false;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->up = false;
+                }
                 break;
             case sf::Keyboard::A:
-                m_player->cInput->left = false;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->left = false;
+                }
                 break;
             case sf::Keyboard::S:
-                m_player->cInput->down = false;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->down = false;
+                }
                 break;
             case sf::Keyboard::D:
-                m_player->cInput->right = false;
+                for (auto &e : entities)
+                {
+                    if (e->cInput != nullptr)
+                        e->cInput->right = false;
+                }
                 break;
             default:
                 break;
@@ -414,7 +489,14 @@ void Game::sRender()
     {
         e->cShape->circle.setPosition(e->cTransform->pos.x, e->cTransform->pos.y);
 
-        e->cTransform->angle += 1.0f;
+        if (e->tag() == "special bullet")
+        {
+            e->cTransform->angle += 5.0f;
+        }
+        else
+        {
+            e->cTransform->angle += 1.0f;
+        }
         e->cShape->circle.setRotation(e->cTransform->angle);
 
         m_window.draw(e->cShape->circle);
@@ -459,6 +541,30 @@ void Game::sCollision()
                         m_score += enemy->cScore->score;
                         enemy->destroy();
                         bullet->destroy();
+                        if (enemy->tag() == "enemy")
+                        {
+                            spawnSmallEnemies(enemy);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    auto specialBullets = m_entities.getEntities("special bullet");
+
+    for (auto &bullet : specialBullets)
+    {
+        if (bullet->isActive())
+        {
+            for (auto &enemy : allEnemies)
+            {
+                if (enemy->isActive())
+                {
+                    if (checkCollision(bullet, enemy))
+                    {
+                        m_score += enemy->cScore->score;
+                        enemy->destroy();
                         if (enemy->tag() == "enemy")
                         {
                             spawnSmallEnemies(enemy);
