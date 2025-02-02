@@ -60,6 +60,8 @@ void Game::init(const std::string &path)
             sf::Uint32 style = (fullscreenMode == 1) ? sf::Style::Fullscreen : sf::Style::Default;
             m_window.create(mode, "Assignment 2", style);
             m_window.setFramerateLimit(framerate);
+            m_speicalWeaponTimeCooldown = 5;
+            m_speicalWeaponFrameCooldown = m_speicalWeaponTimeCooldown * framerate;
         }
         else if (rowIdentifier == "Font")
         {
@@ -281,6 +283,8 @@ void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity)
 
         specialBullet->cInput = std::make_shared<CInput>();
     }
+
+    m_lastSpecialWeaponSpawnTime = m_currentFrame;
 }
 
 // Systems
@@ -443,7 +447,8 @@ void Game::sUserInput()
 
             if (event.mouseButton.button == sf::Mouse::Right)
             {
-                spawnSpecialWeapon(m_player);
+                if (m_currentFrame >= m_lastSpecialWeaponSpawnTime + m_speicalWeaponFrameCooldown)
+                    spawnSpecialWeapon(m_player);
             }
         }
     }
