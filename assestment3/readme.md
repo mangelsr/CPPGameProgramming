@@ -179,3 +179,64 @@ Player GX GY CW CH SX SY SM GY B
 | Max Speed        | SM           | `float`          | Maximum speed the player can reach   |
 | Gravity          | GY           | `float`          | Gravity affecting the player         |
 | Bullet Animation | B            | `std::string`    | Animation asset to use for bullets   |
+
+## Assignment Hints
+
+I recommend approaching this assignment in the following order, which will help you debug your program along the way with minimal errors. Remember to do one step at a time and test whether what you have just implemented is working properly before moving on to any additional steps.
+
+- **Rendering system has already been set up for you, to help you debug:**
+  - You can press the **T** key to toggle drawing textures.
+  - You can press the **C** key to toggle drawing bounding boxes.
+  - You can press the **G** key to toggle drawing the grid.
+
+- **You can implement `Animation::update()` and `Animation::hasEnded()` at any time**, it will not affect the gameplay mechanics whatsoever, just animation.
+
+- **Implement `Scene_Play::loadLevel()`**
+  - Since rendering is already completed, once you correctly read in the different types of entities, add them to the `EntityManager`, and they should automatically be drawn to the screen.
+  - Add the correct bounding boxes to **Tile** entities, and no bounding boxes to the **Dec** entities.
+  - Remember you can toggle debug viewing of bounding boxes with the **T** and **C** keys.
+
+- **As part of this step, implement the `Scene_Play::gridToMidPixel()` function**, which takes in as parameters a grid (x, y) position and an `Entity`, and returns the `Vec2` position of the **CENTER** of that `Entity`.
+  - You must use the `Animation` size of the `Entity` to determine where its center point should be.
+  - Keep in mind that this means your `Entity` **MUST** have its `CAnimation` component added first, so that it can be used to calculate the midpoint in this function.
+
+- **Implement `Scene_Play::spawnPlayer()`**
+  - Read the player configuration from the level file and spawn the player.
+  - This is where the player should restart when they die.
+
+- **Implement some basic WASD (up/left/down/right) movement for the player entity** so that you can use this to help test collisions in the future.
+  - Remember that you must use `registerAction` to register a new action for the scene.
+  - See the actions already registered for you, and the `sDoAction()` function for syntax on how to perform actions.
+
+- **Implement `Scene_Play::spawnBullet()`**
+  - Bullet should shoot when **Space** is pressed in the same direction the player is facing.
+  - Holding down the space button should **not** continuously fire bullets.
+  - A new bullet can only be fired after the space key has been released.
+  - Use the entity's `CInput.canShoot` variable to implement this.
+
+- **Implement `Physics::GetOverlap()`**
+  - This function should return the overlap dimensions between the bounding boxes of two entities. This is the same as the purple rectangle in the notes.
+  - `GetPreviousOverlap` should be a copy/paste of this solution, except using the **previous positions** instead of the current positions of the entity.
+  - If either input entity has no bounding box, then return `Vec2(0, 0)`.
+
+- **Implement collision checking with bullets / brick tiles**:
+  - The brick should be destroyed when a bullet collides with it.
+  - Remember, a collision occurs when the overlap is non-zero in both the **X** and **Y** components.
+  - Bullets should always be destroyed when they collide with any non-decorative tile.
+
+- **Implement collision resolution**:
+  - When the player collides with a non-decorative tile, the player **cannot enter or overlap it**.
+  - When the player collides with a tile from below, its **y-velocity should be set to zero** so that it falls back downward and doesn't "hover" below the tile.
+
+- Implement a way of detecting which side the player collided with the tile
+
+- Change the controls such that they are the proper left/right/jump style
+  Note: All movement logic should be in the movement system. The sDoAction
+  system is ONLY used to set the proper CInput variables. If you modify the
+  player's speed or position anywhere inside the sDoAction system, you will
+  lose marks as this potentially unsafe / produces unwanted effects
+
+- Implement gravity such that the player falls toward the bottom of the screen
+  and lands on tiles when it collides with a tile from above. Note that when
+  the player lands on a tile from above, you should set its vertical speed to
+  zero so that gravity does not continue to accelerate the player downward
