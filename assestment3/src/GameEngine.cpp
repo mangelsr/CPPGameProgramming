@@ -1,0 +1,139 @@
+#include <iostream> // For error handling
+
+#include "GameEngine.h"
+
+GameEngine::GameEngine(const std::string &path)
+{
+    init(path);
+}
+
+void GameEngine::init(const std::string &path)
+{
+    // Initialize window
+    m_window.create(sf::VideoMode(800, 600), "My Game"); // Adjust as needed
+
+    // Load assets (textures, sounds, fonts, etc.)
+    m_assets.addTexture("player", "path/to/player.png"); // Example
+    m_assets.addFont("arial", "path/to/arial.ttf");      // Example
+    // ... load other assets ...
+
+    // Example: Add a scene (you'll likely load scenes from a file or configuration)
+    // std::shared_ptr<Scene> playScene = std::make_shared<Scene_Play>(this); // Example
+    // m_sceneMap["play"] = playScene;
+    // m_currentScene = "play";
+}
+
+void GameEngine::update()
+{
+    if (currentScene())
+    {
+        currentScene()->simulate(m_simulationSpeed);
+    }
+}
+
+void GameEngine::sUserInput()
+{
+    sf::Event event;
+    while (m_window.pollEvent(event))
+    {
+        if (event.type == sf::Event::Closed)
+            quit();
+
+        auto scene = currentScene();
+        if (scene)
+        {
+            std::string actionType = "";
+            if (event.type == sf::Event::KeyPressed)
+            {
+                actionType = "START";
+            }
+            else if (event.type == sf::Event::KeyReleased)
+            {
+                actionType = "END";
+            }
+            int keyCode = event.key.code;
+
+            const auto &actionMap = scene->getActionMap();
+            auto it = actionMap.find(keyCode);
+
+            if (it != actionMap.end() && actionType != "")
+            {
+                std::string actionName = it->second;
+                scene->doAction(Action(actionName, actionType));
+            }
+        }
+    }
+}
+
+std::shared_ptr<Scene> GameEngine::currentScene()
+{
+    if (m_currentScene.empty())
+        return nullptr; // Handle the case where no scene is set
+
+    auto it = m_sceneMap.find(m_currentScene);
+    if (it != m_sceneMap.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        std::cerr << "Error: Scene '" << m_currentScene << "' not found." << std::endl;
+        return nullptr; // Or throw an exception
+    }
+}
+
+void GameEngine::changeScene(const std::string &sceneName, std::shared_ptr<Scene> scene, bool endCurrentScene)
+{
+    if (endCurrentScene && currentScene())
+    {
+        currentScene()->onEnd();
+    }
+
+    m_sceneMap[sceneName] = scene; // Add or replace the scene
+    m_currentScene = sceneName;
+
+    if (currentScene())
+    {
+        currentScene()->m_game = this; // Set the game engine pointer for the new scene
+    }
+}
+
+void GameEngine::quit()
+{
+    m_running = false;
+    m_window.close();
+}
+
+void GameEngine::run()
+{
+    while (m_running)
+    {
+        sUserInput();
+        update();
+
+        if (currentScene())
+        {
+            currentScene()->sRender();
+        }
+    }
+}
+
+sf::RenderWindow &GameEngine::window()
+{
+    return m_window;
+}
+
+Assets &GameEngine::assets()
+{
+    return m_assets;
+}
+
+const Assets &GameEngine::assets() const
+{
+    return m_assets;
+}
+
+bool GameEngine::isRunning()
+{
+    return m_running;
+}

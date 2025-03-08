@@ -1,9 +1,11 @@
 #pragma once
 
+#include <memory>
+
+#include <SFML/Graphics.hpp>
+
 #include "Scene.h"
 #include "Assets.h"
-
-#include <memory>
 
 typedef std::map<std::string, std::shared_ptr<Scene>> SceneMap;
 
@@ -31,5 +33,7 @@ public:
     void run();
 
     sf::RenderWindow &window();
+    Assets &assets();
     const Assets &assets() const;
     bool isRunning();
+};

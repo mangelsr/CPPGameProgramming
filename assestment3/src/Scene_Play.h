@@ -2,9 +2,16 @@
 
 #include <map>
 #include <memory>
+#include <string>
 
+#include <SFML/Graphics.hpp>
+
+#include "Action.h"
+#include "Components.h"
 #include "EntityManager.h"
+#include "GameEngine.h"
 #include "Scene.h"
+#include "Vec2.h"
 
 class Scene_Play : public Scene
 {
@@ -25,4 +32,21 @@ protected:
     sf::Text m_gridText;
 
     void init(const std::string &levelPath);
+    Vec2 gridToMidPixel(float gridX, float gridY, std::shared_ptr<Entity> entity);
+    void loadLevel(const std::string &filename);
+    void spawnPlayer();
+    void spawnBullet(std::shared_ptr<Entity> entity);
+    void update();
+
+    void sMovement();
+    void sLifespan();
+    void sCollision();
+    void sDoAction(const Action &action);
+    void sAnimation();
+    void sRender();
+    
+    void onEnd();
+
+public:
+    Scene_Play(GameEngine *gameEngine, const std::string &levelPath);
 };

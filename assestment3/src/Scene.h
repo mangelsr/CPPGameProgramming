@@ -1,9 +1,9 @@
 #pragma once
 
+#include <memory>
+
 #include "Action.h"
 #include "EntityManager.h"
-
-#include <memory>
 
 class GameEngine;
 
@@ -11,6 +11,8 @@ typedef std::map<int, std::string> ActionMap;
 
 class Scene
 {
+    friend class GameEngine;
+
 protected:
     GameEngine *m_game = nullptr;
     EntityManager m_entityManager;
