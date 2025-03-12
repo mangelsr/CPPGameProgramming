@@ -11,7 +11,7 @@ GameEngine::GameEngine(const std::string &path)
 void GameEngine::init(const std::string &path)
 {
     // Initialize window
-    m_window.create(sf::VideoMode(800, 600), "My Game"); // Adjust as needed
+    m_window.create(sf::VideoMode(1280, 768), "My Game"); // Adjust as needed
     m_window.setFramerateLimit(60);
 
     // Load assets (textures, sounds, fonts, etc.)
