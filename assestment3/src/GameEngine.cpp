@@ -1,6 +1,7 @@
 #include <iostream> // For error handling
 
 #include "GameEngine.h"
+#include "Scene_Menu.h"
 
 GameEngine::GameEngine(const std::string &path)
 {
@@ -11,16 +12,17 @@ void GameEngine::init(const std::string &path)
 {
     // Initialize window
     m_window.create(sf::VideoMode(800, 600), "My Game"); // Adjust as needed
+    m_window.setFramerateLimit(60);
 
     // Load assets (textures, sounds, fonts, etc.)
-    m_assets.addTexture("player", "path/to/player.png"); // Example
-    m_assets.addFont("arial", "path/to/arial.ttf");      // Example
+    // m_assets.addTexture("player", "path/to/player.png"); // Example
+    m_assets.addFont("silver", path + "/assets/font/Silver.ttf");
     // ... load other assets ...
 
     // Example: Add a scene (you'll likely load scenes from a file or configuration)
-    // std::shared_ptr<Scene> playScene = std::make_shared<Scene_Play>(this); // Example
-    // m_sceneMap["play"] = playScene;
-    // m_currentScene = "play";
+    std::shared_ptr<Scene> menuScene = std::make_shared<Scene_Menu>(this); // Example
+    m_sceneMap["menu"] = menuScene;
+    m_currentScene = "menu";
 }
 
 void GameEngine::update()
@@ -77,7 +79,7 @@ std::shared_ptr<Scene> GameEngine::currentScene()
     }
     else
     {
-        std::cerr << "Error: Scene '" << m_currentScene << "' not found." << std::endl;
+        std::cout << "Error: Scene '" << m_currentScene << "' not found." << std::endl;
         return nullptr; // Or throw an exception
     }
 }
