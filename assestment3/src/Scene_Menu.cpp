@@ -20,13 +20,13 @@ void Scene_Menu::init()
     m_levelPaths.push_back("level3.txt");
 
     m_menuText.setFont(m_game->assets().getFont("silver"));
-    m_menuText.setCharacterSize(50);
+    m_menuText.setCharacterSize(70);
     m_menuText.setFillColor(sf::Color::Black);
 
     m_helpText.setFont(m_game->assets().getFont("silver"));
-    m_helpText.setCharacterSize(35);
+    m_helpText.setCharacterSize(45);
     m_helpText.setFillColor(sf::Color::Black);
-    m_helpText.setString("UP: M    DOWN: S    PLAY: D    BACK: ESC");
+    m_helpText.setString("UP: W    DOWN: S    PLAY: D    BACK: ESC");
 
     registerAction(sf::Keyboard::W, "UP");
     registerAction(sf::Keyboard::S, "DOWN");
@@ -52,13 +52,11 @@ void Scene_Menu::sDoAction(const Action &action)
         {
             if (m_selectedMenuIndex > 0)
                 m_selectedMenuIndex--;
-            std::cout << "m_selectedMenuIndex: " << m_selectedMenuIndex << std::endl;
         }
         else if (action.name() == "DOWN")
         {
             if (m_selectedMenuIndex < m_menuStrings.size() - 1)
                 m_selectedMenuIndex++;
-            std::cout << "m_selectedMenuIndex: " << m_selectedMenuIndex << std::endl;
         }
         else if (action.name() == "SELECT")
         {
@@ -87,7 +85,7 @@ void Scene_Menu::sRender()
     for (size_t i = 0; i < m_menuStrings.size(); i++)
     {
         m_menuText.setString(m_menuStrings[i]);
-        m_menuText.setPosition(40, 80 + i * 50);
+        m_menuText.setPosition(40, 90 + i * 65);
         if (i == m_selectedMenuIndex)
             m_menuText.setFillColor(sf::Color::White);
         else
@@ -95,7 +93,7 @@ void Scene_Menu::sRender()
         m_game->window().draw(m_menuText);
     }
 
-    m_helpText.setPosition(20, m_game->window().getSize().y - 40);
+    m_helpText.setPosition(20, m_game->window().getSize().y - 65);
     m_game->window().draw(m_helpText);
 
     m_game->window().display();
