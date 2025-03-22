@@ -2,6 +2,7 @@
 
 #include "Scene_Play.h"
 
+#include "Scene_Menu.h"
 #include "GameEngine.h"
 #include "Components.h"
 #include "Action.h"
@@ -194,6 +195,7 @@ void Scene_Play::onEnd()
 {
     // TODO: When the scene ends, change back to the MENU scene
     //       use m_game->changeScene(correct params);
+    m_game->changeScene("menu", std::make_shared<Scene_Menu>(m_game));
 }
 
 void Scene_Play::sRender()
