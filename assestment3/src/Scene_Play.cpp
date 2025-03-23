@@ -36,7 +36,14 @@ Vec2 Scene_Play::gridToMidPixel(float gridX, float gridY, std::shared_ptr<Entity
     // You must use the Entity's Animation size to position it correctly
     // The size of the grid width and height is stored in m_gridSize.x and m_gridSize.y
     // The bottom-left corner of the Animation should align with the bottom left of the grid cell
+    if (entity->hasComponent<CAnimation>())
+    {
+        Vec2 halfAnimSize = entity->getComponent<CAnimation>().animation.getSize() / 2;
+        Vec2 bottomLeftCell(gridX * m_gridSize.x, height() - (gridY * m_gridSize.y));
 
+        return Vec2(bottomLeftCell.x + halfAnimSize.x, bottomLeftCell.y - halfAnimSize.y);
+    }
+    std::cerr << "The entity do not contain an Animation component" << std::endl;
     return Vec2(0, 0);
 }
 
@@ -68,10 +75,10 @@ void Scene_Play::loadLevel(const std::string &filename)
     }
 
     auto block = m_entityManager.addEntity("tile");
-    block->addComponent<CAnimation>(m_game->assets().getAnimation("Block"), true);
+    block->addComponent<CAnimation>(m_game->assets().getAnimation("Ground"), true);
     block->addComponent<CTransform>(Vec2(224, 480));
     // add a bounding box, this will now show up if we press the 'C' key
-    block->addComponent<CBoundingBox>(m_game->assets().getAnimation("Block").getSize());
+    block->addComponent<CBoundingBox>(m_game->assets().getAnimation("Ground").getSize());
 
     auto question = m_entityManager.addEntity("tile");
     question->addComponent<CAnimation>(m_game->assets().getAnimation("Question"), true);
