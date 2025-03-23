@@ -19,11 +19,11 @@ void Scene_Menu::init()
     m_levelPaths.push_back("level2.txt");
     m_levelPaths.push_back("level3.txt");
 
-    m_menuText.setFont(m_game->assets().getFont("silver"));
+    m_menuText.setFont(m_game->assets().getFont("Silver"));
     m_menuText.setCharacterSize(70);
     m_menuText.setFillColor(sf::Color::Black);
 
-    m_helpText.setFont(m_game->assets().getFont("silver"));
+    m_helpText.setFont(m_game->assets().getFont("Silver"));
     m_helpText.setCharacterSize(45);
     m_helpText.setFillColor(sf::Color::Black);
     m_helpText.setString("UP: W    DOWN: S    PLAY: D    BACK: ESC");
@@ -95,6 +95,4 @@ void Scene_Menu::sRender()
 
     m_helpText.setPosition(20, m_game->window().getSize().y - 65);
     m_game->window().draw(m_helpText);
-
-    m_game->window().display();
 }
