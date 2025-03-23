@@ -1,4 +1,5 @@
 #include <iostream> // For error handling
+#include <fstream>
 
 #include "GameEngine.h"
 #include "Scene_Menu.h"
@@ -15,9 +16,31 @@ void GameEngine::init(const std::string &path)
     m_window.setFramerateLimit(60);
 
     // Load assets (textures, sounds, fonts, etc.)
-    // m_assets.addTexture("player", "path/to/player.png"); // Example
-    m_assets.addFont("silver", path + "/assets/font/Silver.ttf");
-    // ... load other assets ...
+    std::ifstream fileIn(path + "assets.txt");
+    std::string rowIdentifier;
+    while (fileIn >> rowIdentifier)
+    {
+        if (rowIdentifier == "Texture")
+        {
+            std::string name, location;
+            fileIn >> name >> location;
+            m_assets.addTexture(name, path + location);
+        }
+        else if (rowIdentifier == "Animation")
+        {
+            std::string name, textureName;
+            size_t frameCount, speed;
+            fileIn >> name >> textureName >> frameCount >> speed;
+            const sf::Texture &texture = m_assets.getTexture(textureName);
+            m_assets.addAnimation(name, Animation(name, texture, frameCount, speed));
+        }
+        else if (rowIdentifier == "Font")
+        {
+            std::string name, location;
+            fileIn >> name >> location;
+            m_assets.addFont(name, path + location);
+        }
+    }
 
     // Example: Add a scene (you'll likely load scenes from a file or configuration)
     std::shared_ptr<Scene> menuScene = std::make_shared<Scene_Menu>(this); // Example
@@ -116,6 +139,7 @@ void GameEngine::run()
         if (currentScene())
         {
             currentScene()->sRender();
+            window().display();
         }
     }
 }

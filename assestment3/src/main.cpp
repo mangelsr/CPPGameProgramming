@@ -4,6 +4,6 @@
 
 int main()
 {
-    GameEngine gameEngine(".");
+    GameEngine gameEngine("./assets/");
     gameEngine.run();
 }
