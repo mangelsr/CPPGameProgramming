@@ -21,9 +21,9 @@ class Entity
 {
     friend class EntityManager;
 
-    bool m_active = true;
-    std::string m_tag = "default";
     size_t m_id = 0;
+    std::string m_tag = "default";
+    bool m_active = true;
     ComponentTuple m_components;
 
     // constructor is private so we can never create
