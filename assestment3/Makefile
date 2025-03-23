@@ -16,7 +16,7 @@ OUTPUT := sfmlgame.out
 SFML_DIR := .
 
 # compiler and linker flags
-CXX_FLAGS := -O3 -std=c++17
+CXX_FLAGS := -O3 -std=c++17 -Wall -Wextra
 INCLUDES := -I./src -I$(SFML_DIR)/include
 LDFLAGS := -O3 -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -L$(SFML_DIR)/lib
 
