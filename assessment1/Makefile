@@ -2,14 +2,19 @@
 
 # Compiler
 CXX = g++
+
 # Compiler flags
-CXXFLAGS = -std=c++17
+CXXFLAGS = -std=c++17 -Wall -Wextra
+
 # SFML libraries
 LIBS = -lsfml-graphics -lsfml-window -lsfml-system
+
 # Target executable
 TARGET = sfml_app.out
+
 # Source files
 SRC = main.cpp
+
 # Object files
 OBJ = $(SRC:.cpp=.o)
 
