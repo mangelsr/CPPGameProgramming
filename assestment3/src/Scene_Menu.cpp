@@ -15,9 +15,9 @@ void Scene_Menu::init()
     m_menuStrings.push_back("LEVEL 2");
     m_menuStrings.push_back("LEVEL 3");
 
-    m_levelPaths.push_back("level1.txt");
-    m_levelPaths.push_back("level2.txt");
-    m_levelPaths.push_back("level3.txt");
+    m_levelPaths.push_back("./assets/level1.txt");
+    m_levelPaths.push_back("./assets/level2.txt");
+    m_levelPaths.push_back("./assets/level3.txt");
 
     m_menuText.setFont(m_game->assets().getFont("Silver"));
     m_menuText.setCharacterSize(70);
