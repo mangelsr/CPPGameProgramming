@@ -6,6 +6,7 @@
 #include "GameEngine.h"
 #include "Components.h"
 #include "Action.h"
+#include "Physics.h"
 
 Scene_Play::Scene_Play(GameEngine *gameEngine, const std::string &levelPath)
     : Scene(gameEngine), m_levelPath(levelPath)
@@ -22,6 +23,10 @@ void Scene_Play::init(const std::string &levelPath)
     registerAction(sf::Keyboard::G, "TOGGLE_GRID");      // Toggle drawing (G)rid
 
     // TODO: Register all other gameplay Actions
+    registerAction(sf::Keyboard::A, "MOVE_LEFT");
+    registerAction(sf::Keyboard::D, "MOVE_RIGHT");
+    registerAction(sf::Keyboard::W, "JUMP");
+    registerAction(sf::Keyboard::Space, "SHOOT");
 
     m_gridText.setCharacterSize(12);
     m_gridText.setFont(m_game->assets().getFont("Tech"));
@@ -58,6 +63,16 @@ void Scene_Play::loadLevel(const std::string &filename)
 
     // NOTE: all of the code below is sample code which shows you how to
     // set up and use entities with the new syntax, it should be removed
+
+    // Player 1 1 64 64 5 15 20 1 Buster
+    m_playerConfig.X = 1;
+    m_playerConfig.Y = 1;
+    m_playerConfig.CX = 64;
+    m_playerConfig.CY = 64;
+    m_playerConfig.SPEED = 2;
+    m_playerConfig.JUMP = 20;
+    m_playerConfig.MAXSPEED = 20;
+    m_playerConfig.GRAVITY = 1;
 
     spawnPlayer();
 
@@ -107,6 +122,8 @@ void Scene_Play::spawnPlayer()
     m_player->addComponent<CBoundingBox>(Vec2(48, 48));
 
     // TODO: be sure to add the remaining components to the player
+    m_player->addComponent<CGravity>(m_playerConfig.GRAVITY);
+    m_player->addComponent<CState>("idle");
 }
 
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
@@ -128,10 +145,61 @@ void Scene_Play::update()
 
 void Scene_Play::sMovement()
 {
-    // TODO: Implement player movement / jumping based on its CInput component
-    // TODO: Implement gravity's effect on the player
-    // TODO: Implement the maximum player speed in both X and Y directions
     // NOTE: Setting an entity's scale.x to -1/1 will make it face to the left/right
+    CTransform &transform = m_player->getComponent<CTransform>();
+    CInput &input = m_player->getComponent<CInput>();
+    
+    // TODO: Implement player movement / jumping based on its CInput component
+    if (input.left)
+    {
+        transform.velocity.x -= m_playerConfig.SPEED;
+        transform.scale.x = -1;
+    }
+    else if (input.right)
+    {
+        transform.velocity.x += m_playerConfig.SPEED;
+        transform.scale.x = 1;
+    }
+    else if (!input.left && !input.right)
+    {
+        transform.velocity.x = 0;
+    }
+
+    if (input.up)
+    {
+        if (input.canJump)
+        {
+            m_player->addComponent<CState>("OnAir");
+            input.canJump = false;
+            transform.velocity.y -= m_playerConfig.JUMP;
+        }
+    }
+
+    // TODO: Implement gravity's effect on the player
+    float gravity = m_player->getComponent<CGravity>().gravity;
+    transform.velocity.y += gravity;
+
+    // TODO: Implement the maximum player speed in both X and Y directions
+    if (transform.velocity.x > m_playerConfig.MAXSPEED)
+    {
+        transform.velocity.x = m_playerConfig.MAXSPEED;
+    }
+    else if (transform.velocity.x < -m_playerConfig.MAXSPEED)
+    {
+        transform.velocity.x = -m_playerConfig.MAXSPEED;
+    }
+
+    if (transform.velocity.y > m_playerConfig.MAXSPEED)
+    {
+        transform.velocity.y = m_playerConfig.MAXSPEED;
+    }
+    else if (transform.velocity.y < -m_playerConfig.MAXSPEED)
+    {
+        transform.velocity.y = -m_playerConfig.MAXSPEED;
+    }
+
+    transform.prevPos = transform.pos;
+    transform.pos += transform.velocity;
 }
 
 void Scene_Play::sLifespan()
@@ -151,12 +219,43 @@ void Scene_Play::sCollision()
 
     // TODO: Implement bullet / tile collisions
     // Destroy the tile if it has a Brick animation
+    for (std::shared_ptr<Entity> bullet : m_entityManager.getEntities("bullet"))
+    {
+        for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("tile"))
+        {
+            Vec2 overlap = Physics::GetOverlap(bullet, tile);
+        }
+    }
+
     // TODO: Implement player / tile collisions and resolutions
     // Update the CState component of the player to store whether
     // it is currently on the ground or in the air. This will be
     // used by the Animation system
+    bool isOnAir = true;
+    for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("tile"))
+    {
+        Vec2 overlap = Physics::GetOverlap(m_player, tile);
+        if (overlap.y >= 0)
+        {
+        }
+    }
+
     // TODO: Check to see if the player has fallen down a hole (y > height())
     // TODO: Don't let the player walk off the left side of the map
+    auto &position = m_player->getComponent<CTransform>().pos;
+    auto halfSize = m_player->getComponent<CAnimation>().animation.getSize() / 2;
+    if (position.x - halfSize.x < 0)
+    {
+        position.x = halfSize.x;
+    }
+
+    // HACK to stop falling out the screen
+    if (position.y + halfSize.y > height())
+    {
+        position.y = height() - halfSize.y;
+        m_player->addComponent<CState>("onFloor");
+        m_player->getComponent<CInput>().canJump = true;
+    }
 }
 
 void Scene_Play::sDoAction(const Action &action)
@@ -183,9 +282,41 @@ void Scene_Play::sDoAction(const Action &action)
         {
             onEnd();
         }
+        else if (action.name() == "MOVE_LEFT")
+        {
+            m_player->getComponent<CInput>().left = true;
+        }
+        else if (action.name() == "MOVE_RIGHT")
+        {
+            m_player->getComponent<CInput>().right = true;
+        }
+        else if (action.name() == "JUMP")
+        {
+            m_player->getComponent<CInput>().up = true;
+        }
+        else if (action.name() == "SHOOT")
+        {
+            m_player->getComponent<CInput>().shoot = true;
+        }
     }
     else if (action.type() == "END")
     {
+        if (action.name() == "MOVE_LEFT")
+        {
+            m_player->getComponent<CInput>().left = false;
+        }
+        else if (action.name() == "MOVE_RIGHT")
+        {
+            m_player->getComponent<CInput>().right = false;
+        }
+        else if (action.name() == "JUMP")
+        {
+            m_player->getComponent<CInput>().up = false;
+        }
+        else if (action.name() == "SHOOT")
+        {
+            m_player->getComponent<CInput>().shoot = false;
+        }
     }
 }
 
