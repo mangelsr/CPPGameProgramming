@@ -25,7 +25,7 @@ This game must have the following features:
 - The player moves with the following controls:
   - **Left:** A key
   - **Right:** D key
-  - **Jump:** M key
+  - **Jump:** W key
   - **Shoot:** Space key
 - The player can move left, move right, or shoot at any time during the game.
   This means the player can move left/right while in the air.
