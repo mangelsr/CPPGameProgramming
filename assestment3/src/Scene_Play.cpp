@@ -65,7 +65,7 @@ void Scene_Play::loadLevel(const std::string &filename)
     // NOTE: all of the code below is sample code which shows you how to
     // set up and use entities with the new syntax, it should be removed
 
-    std::ifstream fileIn(m_levelPath);
+    std::ifstream fileIn(filename);
     std::string rowIdentifier;
 
     while (fileIn >> rowIdentifier)
@@ -162,6 +162,25 @@ void Scene_Play::spawnPlayer()
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
 {
     // TODO: this should spawn a bullet at the given entity, going in the direction the entity is facing
+    float bulletSpeed = 6;
+    Animation &animation = m_game->assets().getAnimation(m_playerConfig.WEAPON);
+    CTransform &eTransform = entity->getComponent<CTransform>();
+
+    Vec2 position(eTransform.pos);
+    Vec2 velocity(0, 0);
+    if (eTransform.scale.x == 1)
+    {
+        velocity.x = bulletSpeed;
+    }
+    else if (eTransform.scale.x == -1)
+    {
+        velocity.x = -bulletSpeed;
+    }
+
+    std::shared_ptr<Entity> bullet = m_entityManager.addEntity("Bullet");
+    bullet->addComponent<CAnimation>(animation, false);
+    bullet->addComponent<CBoundingBox>(animation.getSize());
+    bullet->addComponent<CTransform>(position, velocity, Vec2(1, 1), 0);
 }
 
 void Scene_Play::update()
@@ -169,10 +188,13 @@ void Scene_Play::update()
     m_entityManager.update();
     // TODO: implement pause functionality
 
-    sMovement();
-    sLifespan();
-    sCollision();
-    sAnimation();
+    if (!m_paused)
+    {
+        sMovement();
+        sLifespan();
+        sCollision();
+        sAnimation();
+    }
     sRender();
 }
 
@@ -208,9 +230,30 @@ void Scene_Play::sMovement()
         }
     }
 
+    if (input.shoot)
+    {
+        if (input.canShoot)
+        {
+            spawnBullet(m_player);
+            input.canShoot = false;
+        }
+    }
+    else
+    {
+        input.canShoot = true;
+    }
+
     // TODO: Implement gravity's effect on the player
-    float gravity = m_player->getComponent<CGravity>().gravity;
-    transform.velocity.y += gravity;
+    std::string state = m_player->getComponent<CState>().state;
+    if (state == "OnAir")
+    {
+        float gravity = m_player->getComponent<CGravity>().gravity;
+        transform.velocity.y += gravity;
+    }
+    else if (state == "OnFloor")
+    {
+        transform.velocity.y = 0;
+    }
 
     // TODO: Implement the maximum player speed in both X and Y directions
     if (transform.velocity.x > m_playerConfig.MAXSPEED)
@@ -233,6 +276,13 @@ void Scene_Play::sMovement()
 
     transform.prevPos = transform.pos;
     transform.pos += transform.velocity;
+
+    for (std::shared_ptr<Entity> bullet : m_entityManager.getEntities("Bullet"))
+    {
+        CTransform &bTransform = bullet->getComponent<CTransform>();
+        bTransform.prevPos = bTransform.pos;
+        bTransform.pos += bTransform.velocity;
+    }
 }
 
 void Scene_Play::sLifespan()
@@ -254,7 +304,7 @@ void Scene_Play::sCollision()
     // Destroy the tile if it has a Brick animation
     for (std::shared_ptr<Entity> bullet : m_entityManager.getEntities("bullet"))
     {
-        for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("tile"))
+        for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("Tile"))
         {
             Vec2 overlap = Physics::GetOverlap(bullet, tile);
         }
@@ -265,7 +315,7 @@ void Scene_Play::sCollision()
     // it is currently on the ground or in the air. This will be
     // used by the Animation system
     bool isOnAir = true;
-    for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("tile"))
+    for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("Tile"))
     {
         Vec2 overlap = Physics::GetOverlap(m_player, tile);
         if (overlap.y >= 0)
@@ -286,7 +336,7 @@ void Scene_Play::sCollision()
     if (position.y + halfSize.y > height())
     {
         position.y = height() - halfSize.y;
-        m_player->addComponent<CState>("onFloor");
+        m_player->addComponent<CState>("OnFloor");
         m_player->getComponent<CInput>().canJump = true;
     }
 }
