@@ -156,7 +156,7 @@ void Scene_Play::spawnPlayer()
 
     // TODO: be sure to add the remaining components to the player
     m_player->addComponent<CGravity>(m_playerConfig.GRAVITY);
-    m_player->addComponent<CState>("idle");
+    m_player->addComponent<CState>("Stand");
 }
 
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
@@ -178,7 +178,7 @@ void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
     }
 
     std::shared_ptr<Entity> bullet = m_entityManager.addEntity("Bullet");
-    bullet->addComponent<CAnimation>(animation, false);
+    bullet->addComponent<CAnimation>(animation, true);
     bullet->addComponent<CBoundingBox>(animation.getSize());
     bullet->addComponent<CTransform>(position, velocity, Vec2(1, 1), 0);
 }
@@ -224,7 +224,6 @@ void Scene_Play::sMovement()
     {
         if (input.canJump)
         {
-            m_player->addComponent<CState>("OnAir");
             input.canJump = false;
             transform.velocity.y -= m_playerConfig.JUMP;
         }
@@ -243,14 +242,46 @@ void Scene_Play::sMovement()
         input.canShoot = true;
     }
 
+    std::string newState = "";
+    std::string currentState = m_player->getComponent<CState>().state;
+
+    if (!input.left && !input.right && !input.up && !input.shoot && input.canJump)
+    {
+        newState = "Stand";
+    }
+    else if (!input.left && !input.right && !input.up && input.canJump && input.shoot)
+    {
+        newState = "StandShoot";
+    }
+    else if ((input.left || input.right) && (!input.up && input.canJump) && !input.shoot)
+    {
+        newState = "Run";
+    }
+    else if ((input.left || input.right) && (!input.up && input.canJump) && input.shoot)
+    {
+        newState = "RunShoot";
+    }
+    else if (!input.canJump && !input.shoot)
+    {
+        newState = "Jump";
+    }
+    else if (!input.canJump && !input.canShoot)
+    {
+        newState = "AirShoot";
+    }
+
+    if (newState != currentState)
+    {
+        m_player->addComponent<CState>(newState);
+    }
+
     // TODO: Implement gravity's effect on the player
-    std::string state = m_player->getComponent<CState>().state;
-    if (state == "OnAir")
+    if (!input.canJump)
     {
         float gravity = m_player->getComponent<CGravity>().gravity;
         transform.velocity.y += gravity;
     }
-    else if (state == "OnFloor")
+    else
     {
         transform.velocity.y = 0;
     }
@@ -336,7 +367,6 @@ void Scene_Play::sCollision()
     if (position.y + halfSize.y > height())
     {
         position.y = height() - halfSize.y;
-        m_player->addComponent<CState>("OnFloor");
         m_player->getComponent<CInput>().canJump = true;
     }
 }
@@ -408,8 +438,28 @@ void Scene_Play::sAnimation()
     // TODO: Complete the Animation class code first
 
     // TODO: set the animation of the player based on its CState component
+    std::string playerState = m_player->getComponent<CState>().state;
+    CAnimation &currentAnimation = m_player->getComponent<CAnimation>();
+
+    if (playerState != currentAnimation.animation.getName())
+    {
+        Animation &anim = m_game->assets().getAnimation(playerState);
+        m_player->addComponent<CAnimation>(anim, true);
+    }
+
     // TODO: for each entity with an animation, call entity->getComponent<CAnimation>().animation.update()
     //       if the animation is not repeated, and it has ended, destroy the entity
+    for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities())
+    {
+        if (e->hasComponent<CAnimation>())
+        {
+            CAnimation &anim = e->getComponent<CAnimation>();
+            if (anim.repeat)
+                anim.animation.update();
+            else if (anim.animation.hasEnded())
+                e->destroy();
+        }
+    }
 }
 
 void Scene_Play::onEnd()
