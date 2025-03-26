@@ -455,9 +455,8 @@ void Scene_Play::sAnimation()
         if (e->hasComponent<CAnimation>())
         {
             CAnimation &anim = e->getComponent<CAnimation>();
-            if (anim.repeat)
                 anim.animation.update();
-            else if (anim.animation.hasEnded())
+            if (!anim.repeat && anim.animation.hasEnded())
                 e->destroy();
         }
     }
