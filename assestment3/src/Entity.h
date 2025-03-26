@@ -39,16 +39,7 @@ public:
     template <typename T>
     bool hasComponent() const
     {
-        // Attempt to get the component
-        try
-        {
-            getComponent<T>();
-            return true; // If getComponent doesn't throw, the component exists
-        }
-        catch (const std::out_of_range &oor)
-        {
-            return false; // If getComponent throws, the component doesn't exist
-        }
+        return getComponent<T>().has;
     }
 
     template <typename T, typename... TArgs>
@@ -75,6 +66,8 @@ public:
     template <typename T>
     void removeComponent()
     {
-        getComponent<T>() = T();
+        auto &component = getComponent<T>();
+        component = T();
+        component.has = false;
     }
 };
