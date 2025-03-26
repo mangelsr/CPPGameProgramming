@@ -334,11 +334,23 @@ void Scene_Play::sCollision()
 
     // TODO: Implement bullet / tile collisions
     // Destroy the tile if it has a Brick animation
-    for (std::shared_ptr<Entity> bullet : m_entityManager.getEntities("bullet"))
+    Animation &explosionAnim = m_game->assets().getAnimation("Explosion");
+
+    for (const std::shared_ptr<Entity> &bullet : m_entityManager.getEntities("Bullet"))
     {
-        for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("Tile"))
+        if (bullet->isActive())
         {
-            Vec2 overlap = Physics::GetOverlap(bullet, tile);
+            for (const std::shared_ptr<Entity> &tile : m_entityManager.getEntities("Tile"))
+            {
+                Vec2 overlap = Physics::GetOverlap(bullet, tile);
+                if (overlap.x >= 0 && overlap.y >= 0)
+                {
+                    std::string animName = tile->getComponent<CAnimation>().animation.getName();
+                    if (animName == "Brick")
+                        tile->addComponent<CAnimation>(explosionAnim, false);
+                    bullet->destroy();
+                }
+            }
         }
     }
 
@@ -355,20 +367,25 @@ void Scene_Play::sCollision()
         }
     }
 
-    // TODO: Check to see if the player has fallen down a hole (y > height())
-    // TODO: Don't let the player walk off the left side of the map
     auto &position = m_player->getComponent<CTransform>().pos;
     auto halfSize = m_player->getComponent<CAnimation>().animation.getSize() / 2;
-    if (position.x - halfSize.x < 0)
-    {
-        position.x = halfSize.x;
-    }
+    // TODO: Check to see if the player has fallen down a hole (y > height())
+    // if (position.y - halfSize.y > height())
+    // {
+    //     init(m_levelPath);
+    // }
 
     // HACK to stop falling out the screen
     if (position.y + halfSize.y > height())
     {
         position.y = height() - halfSize.y;
         m_player->getComponent<CInput>().canJump = true;
+    }
+
+    // TODO: Don't let the player walk off the left side of the map
+    if (position.x - halfSize.x < 0)
+    {
+        position.x = halfSize.x;
     }
 }
 
@@ -455,7 +472,7 @@ void Scene_Play::sAnimation()
         if (e->hasComponent<CAnimation>())
         {
             CAnimation &anim = e->getComponent<CAnimation>();
-                anim.animation.update();
+            anim.animation.update();
             if (!anim.repeat && anim.animation.hasEnded())
                 e->destroy();
         }
