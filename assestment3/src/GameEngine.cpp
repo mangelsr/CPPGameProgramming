@@ -13,7 +13,7 @@ void GameEngine::init(const std::string &path)
 {
     // Initialize window
     m_window.create(sf::VideoMode(1280, 768), "My Game"); // Adjust as needed
-    m_window.setFramerateLimit(60);
+    m_window.setFramerateLimit(m_framerateLimit);
 
     // Load assets (textures, sounds, fonts, etc.)
     std::ifstream fileIn(path + "assets.txt");
@@ -162,4 +162,9 @@ const Assets &GameEngine::assets() const
 bool GameEngine::isRunning()
 {
     return m_running;
+}
+
+const int GameEngine::framerateLimit()
+{
+    return m_framerateLimit;
 }

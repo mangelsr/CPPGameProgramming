@@ -18,6 +18,7 @@ protected:
     SceneMap m_sceneMap;
     size_t m_simulationSpeed = 1;
     bool m_running = true;
+    int m_framerateLimit = 60;
 
     void init(const std::string &path);
     void update();
@@ -36,4 +37,5 @@ public:
     Assets &assets();
     const Assets &assets() const;
     bool isRunning();
+    const int framerateLimit();
 };
