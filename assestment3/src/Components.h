@@ -81,8 +81,9 @@ public:
 class CState : public Component
 {
 public:
-    std::string state = "jumping";
+    std::string animation = "Stand";
+    bool onGround = true;
 
     CState() {}
-    CState(const std::string &s) : state(s) {}
+    CState(const std::string &anim, bool ground) : animation(anim), onGround(ground) {}
 };
