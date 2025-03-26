@@ -75,7 +75,7 @@ void Scene_Play::loadLevel(const std::string &filename)
 
             Animation &animation = m_game->assets().getAnimation(animName);
 
-            std::shared_ptr<Entity> tile = m_entityManager.addEntity("tile");
+            std::shared_ptr<Entity> tile = m_entityManager.addEntity("Tile");
             tile->addComponent<CAnimation>(animation, true);
             tile->addComponent<CBoundingBox>(animation.getSize());
             tile->addComponent<CTransform>(gridToMidPixel(gridX, gridY, tile));
@@ -88,7 +88,7 @@ void Scene_Play::loadLevel(const std::string &filename)
 
             Animation &animation = m_game->assets().getAnimation(animName);
 
-            std::shared_ptr<Entity> dec = m_entityManager.addEntity("dec");
+            std::shared_ptr<Entity> dec = m_entityManager.addEntity("Dec");
             dec->addComponent<CAnimation>(animation, true);
             dec->addComponent<CTransform>(gridToMidPixel(gridX, gridY, dec));
         }
@@ -127,9 +127,9 @@ void Scene_Play::loadLevel(const std::string &filename)
 
 void Scene_Play::spawnPlayer()
 {
-    auto &initialAnim = m_game->assets().getAnimation("Stand");
+    Animation &initialAnim = m_game->assets().getAnimation("Stand");
     // here is a sample player entity which you can use to construct other entities
-    m_player = m_entityManager.addEntity("player");
+    m_player = m_entityManager.addEntity("Player");
     m_player->addComponent<CAnimation>(initialAnim, true);
     m_player->addComponent<CTransform>(gridToMidPixel(m_playerConfig.X, m_playerConfig.Y, m_player));
     m_player->addComponent<CBoundingBox>(Vec2(m_playerConfig.CX, m_playerConfig.CY));
