@@ -37,5 +37,5 @@ public:
     Assets &assets();
     const Assets &assets() const;
     bool isRunning();
-    const int framerateLimit();
+    int framerateLimit();
 };

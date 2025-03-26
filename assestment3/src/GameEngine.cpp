@@ -164,7 +164,7 @@ bool GameEngine::isRunning()
     return m_running;
 }
 
-const int GameEngine::framerateLimit()
+int GameEngine::framerateLimit()
 {
     return m_framerateLimit;
 }
