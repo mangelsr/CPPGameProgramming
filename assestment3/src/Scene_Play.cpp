@@ -136,14 +136,14 @@ void Scene_Play::spawnPlayer()
 
     // TODO: be sure to add the remaining components to the player
     m_player->addComponent<CGravity>(m_playerConfig.GRAVITY);
-    m_player->addComponent<CState>("Stand");
+    m_player->addComponent<CState>("Stand", true);
 }
 
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
 {
     // TODO: this should spawn a bullet at the given entity, going in the direction the entity is facing
     float bulletSpeed = 10; // pixels per frame
-    int lifeSpanTime = 10; // in seconds
+    int lifeSpanTime = 10;  // in seconds
     int lifetimeFrames = m_game->framerateLimit() * lifeSpanTime;
 
     Animation &animation = m_game->assets().getAnimation(m_playerConfig.WEAPON);
@@ -185,77 +185,54 @@ void Scene_Play::update()
 
 void Scene_Play::sMovement()
 {
-    // NOTE: Setting an entity's scale.x to -1/1 will make it face to the left/right
     CTransform &transform = m_player->getComponent<CTransform>();
     CInput &input = m_player->getComponent<CInput>();
+    CState &state = m_player->getComponent<CState>();
 
-    // TODO: Implement player movement / jumping based on its CInput component
+    transform.velocity.x = 0;
     if (input.left)
     {
         transform.velocity.x -= m_playerConfig.SPEED;
         transform.scale.x = -1;
     }
-    else if (input.right)
+    if (input.right)
     {
         transform.velocity.x += m_playerConfig.SPEED;
         transform.scale.x = 1;
     }
-    else if (!input.left && !input.right)
+
+    if (input.up && input.canJump)
     {
-        transform.velocity.x = 0;
+        transform.velocity.y = -m_playerConfig.JUMP;
+        input.canJump = false;
+        state.onGround = false;
+        state.animation = "Jump";
     }
 
-    if (input.up)
-    {
-        if (input.canJump)
-        {
-            input.canJump = false;
-            transform.velocity.y -= m_playerConfig.JUMP;
-        }
-    }
+    transform.velocity.y += m_player->getComponent<CGravity>().gravity;
 
-    if (input.shoot)
+    // if (!state.onGround)
+    // {
+    //     transform.velocity.y += m_player->getComponent<CGravity>().gravity;
+    // }
+    // else
+    // {
+    //     transform.velocity.y = 0;
+    //     input.canJump = true;
+    // }
+
+    if (input.shoot && input.canShoot)
     {
-        if (input.canShoot)
-        {
-            spawnBullet(m_player);
-            input.canShoot = false;
-        }
+        spawnBullet(m_player);
+        input.canShoot = false;
     }
-    else
+    else if (!input.shoot)
     {
         input.canShoot = true;
     }
 
-    // TODO: Implement gravity's effect on the player
-    if (!input.canJump)
-    {
-        float gravity = m_player->getComponent<CGravity>().gravity;
-        transform.velocity.y += gravity;
-    }
-    else
-    {
-        transform.velocity.y = 0;
-    }
-
-    // TODO: Implement the maximum player speed in both X and Y directions
-    if (transform.velocity.x > m_playerConfig.MAXSPEED)
-    {
-        transform.velocity.x = m_playerConfig.MAXSPEED;
-    }
-    else if (transform.velocity.x < -m_playerConfig.MAXSPEED)
-    {
-        transform.velocity.x = -m_playerConfig.MAXSPEED;
-    }
-
-    if (transform.velocity.y > m_playerConfig.MAXSPEED)
-    {
-        transform.velocity.y = m_playerConfig.MAXSPEED;
-    }
-    else if (transform.velocity.y < -m_playerConfig.MAXSPEED)
-    {
-        transform.velocity.y = -m_playerConfig.MAXSPEED;
-    }
+    transform.velocity.x = std::clamp(transform.velocity.x, -m_playerConfig.MAXSPEED, m_playerConfig.MAXSPEED);
+    transform.velocity.y = std::clamp(transform.velocity.y, -m_playerConfig.MAXSPEED, m_playerConfig.MAXSPEED);
 
     transform.prevPos = transform.pos;
     transform.pos += transform.velocity;
@@ -271,38 +248,30 @@ void Scene_Play::sMovement()
 void Scene_Play::sState()
 {
     CInput &input = m_player->getComponent<CInput>();
+    CState &state = m_player->getComponent<CState>();
 
-    std::string newState = "";
-    std::string currentState = m_player->getComponent<CState>().state;
+    std::string newAnimation = state.animation;
 
-    if (!input.left && !input.right && !input.up && !input.shoot && input.canJump)
+    if (!state.onGround)
     {
-        newState = "Stand";
+        newAnimation = input.shoot ? "AirShoot" : "Jump";
     }
-    else if (!input.left && !input.right && !input.up && input.canJump && input.shoot)
+    else if (input.left || input.right)
     {
-        newState = "StandShoot";
+        newAnimation = input.shoot ? "RunShoot" : "Run";
     }
-    else if ((input.left || input.right) && (!input.up && input.canJump) && !input.shoot)
+    else if (input.shoot)
     {
-        newState = "Run";
+        newAnimation = "StandShoot";
     }
-    else if ((input.left || input.right) && (!input.up && input.canJump) && input.shoot)
+    else
     {
-        newState = "RunShoot";
-    }
-    else if (!input.canJump && !input.shoot)
-    {
-        newState = "Jump";
-    }
-    else if (!input.canJump && !input.canShoot)
-    {
-        newState = "AirShoot";
+        newAnimation = "Stand";
     }
 
-    if (newState != currentState)
+    if (newAnimation != state.animation)
     {
-        m_player->addComponent<CState>(newState);
+        state.animation = newAnimation;
     }
 }
 
@@ -324,16 +293,6 @@ void Scene_Play::sLifespan()
 
 void Scene_Play::sCollision()
 {
-    // REMEMBER: SFML's (0,0) position is on the TOP-LEFT corner
-    // This means jumping will have a negative y-component
-    // and gravity will have a positive y-component
-    // Also, something BELOW something else will have a y value GREATER than it
-    // Also, something ABOVE something else will have a y value LESS than it
-
-    // TODO: Implement Physics::GetOverlap() function, use it inside this function
-
-    // TODO: Implement bullet / tile collisions
-    // Destroy the tile if it has a Brick animation
     Animation &explosionAnim = m_game->assets().getAnimation("Explosion");
 
     for (const std::shared_ptr<Entity> &bullet : m_entityManager.getEntities("Bullet"))
@@ -354,38 +313,82 @@ void Scene_Play::sCollision()
         }
     }
 
-    // TODO: Implement player / tile collisions and resolutions
-    // Update the CState component of the player to store whether
-    // it is currently on the ground or in the air. This will be
-    // used by the Animation system
-    bool isOnAir = true;
-    for (std::shared_ptr<Entity> tile : m_entityManager.getEntities("Tile"))
+    CState &pState = m_player->getComponent<CState>();
+    CTransform &pTransform = m_player->getComponent<CTransform>();
+    CInput &pInput = m_player->getComponent<CInput>();
+    CBoundingBox &pBBox = m_player->getComponent<CBoundingBox>();
+
+    pState.onGround = false;
+
+    for (const std::shared_ptr<Entity> &tile : m_entityManager.getEntities("Tile"))
     {
         Vec2 overlap = Physics::GetOverlap(m_player, tile);
-        if (overlap.y >= 0)
+        Vec2 prevOverlap = Physics::GetPreviousOverlap(m_player, tile);
+
+        if (overlap.x > 0 && overlap.y > 0)
         {
+            Vec2 tilePos = tile->getComponent<CTransform>().pos;
+            Vec2 tileHalfSize = tile->getComponent<CBoundingBox>().halfSize;
+
+            float dx = pTransform.pos.x - tilePos.x;
+            float dy = pTransform.pos.y - tilePos.y;
+
+            float xOverlap = pBBox.halfSize.x + tileHalfSize.x - abs(dx);
+            float yOverlap = pBBox.halfSize.y + tileHalfSize.y - abs(dy);
+
+            if (xOverlap < yOverlap)
+            {
+                if (dx > 0)
+                {
+                    pTransform.pos.x += xOverlap;
+                }
+                else
+                {
+                    pTransform.pos.x -= xOverlap;
+                }
+                pTransform.velocity.x = 0;
+            }
+            else
+            {
+                if (dy > 0)
+                {
+                    pTransform.pos.y += yOverlap;
+                    if (pTransform.velocity.y < 0)
+                        pTransform.velocity.y = 0;
+                }
+                else
+                {
+                    pTransform.pos.y -= yOverlap;
+                    pTransform.velocity.y = 0;
+                    pState.onGround = true;
+                    pInput.canJump = true;
+
+                    if (prevOverlap.y <= 0 && pTransform.velocity.y > 0)
+                    {
+                        pState.animation = (abs(pTransform.velocity.x) > 0) ? "Run" : "Stand";
+                    }
+                }
+            }
         }
     }
 
-    auto &position = m_player->getComponent<CTransform>().pos;
-    auto halfSize = m_player->getComponent<CAnimation>().animation.getSize() / 2;
-    // TODO: Check to see if the player has fallen down a hole (y > height())
-    // if (position.y - halfSize.y > height())
-    // {
-    //     init(m_levelPath);
-    // }
-
-    // HACK to stop falling out the screen
-    if (position.y + halfSize.y > height())
+    if (!pState.onGround)
     {
-        position.y = height() - halfSize.y;
-        m_player->getComponent<CInput>().canJump = true;
+        if (abs(pTransform.velocity.y) > 0)
+        {
+            pState.animation = (pInput.shoot) ? "AirShoot" : "Jump";
+        }
     }
 
-    // TODO: Don't let the player walk off the left side of the map
-    if (position.x - halfSize.x < 0)
+    if (pTransform.pos.y > height())
     {
-        position.x = halfSize.x;
+        init(m_levelPath);
+    }
+
+    if (pTransform.pos.x < 0)
+    {
+        pTransform.pos.x = 0;
+        pTransform.velocity.x = 0;
     }
 }
 
@@ -456,7 +459,7 @@ void Scene_Play::sAnimation()
     // TODO: Complete the Animation class code first
 
     // TODO: set the animation of the player based on its CState component
-    std::string playerState = m_player->getComponent<CState>().state;
+    std::string playerState = m_player->getComponent<CState>().animation;
     CAnimation &currentAnimation = m_player->getComponent<CAnimation>();
 
     if (playerState != currentAnimation.animation.getName())
@@ -499,7 +502,7 @@ void Scene_Play::sRender()
     }
 
     // Center the viewport on the player (if far enough right)
-    auto &pPos = m_player->getComponent<CTransform>().pos; // Use reference for efficiency
+    Vec2 &pPos = m_player->getComponent<CTransform>().pos; // Use reference for efficiency
 
     float windowCenterX = std::max(m_game->window().getSize().x / 2.0f, pPos.x);
 
@@ -515,12 +518,12 @@ void Scene_Play::sRender()
     {
         for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities()) // Use a reference for efficiency
         {
-            auto &transform = e->getComponent<CTransform>(); // Use a reference for efficiency
+            CTransform &transform = e->getComponent<CTransform>(); // Use a reference for efficiency
 
             if (e->hasComponent<CAnimation>())
             {
-                auto &animation = e->getComponent<CAnimation>().animation; // Use a reference!
-                auto &sprite = animation.getSprite();                      // Get a reference to the sprite
+                Animation &animation = e->getComponent<CAnimation>().animation; // Use a reference!
+                sf::Sprite &sprite = animation.getSprite();                     // Get a reference to the sprite
 
                 sprite.setRotation(transform.angle);
                 sprite.setPosition(transform.pos.x, transform.pos.y);
@@ -538,8 +541,8 @@ void Scene_Play::sRender()
         {
             if (e->hasComponent<CBoundingBox>())
             {
-                auto &box = e->getComponent<CBoundingBox>();
-                auto &transform = e->getComponent<CTransform>();
+                CBoundingBox &box = e->getComponent<CBoundingBox>();
+                CTransform &transform = e->getComponent<CTransform>();
 
                 sf::RectangleShape rect;
                 rect.setSize(sf::Vector2f(box.size.x - 1, box.size.y - 1)); // Subtract 1 for visibility
