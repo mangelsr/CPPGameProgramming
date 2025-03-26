@@ -23,7 +23,6 @@ void Scene_Play::init(const std::string &levelPath)
     registerAction(sf::Keyboard::C, "TOGGLE_COLLISION"); // Toggle drawing (C)ollision Boxes
     registerAction(sf::Keyboard::G, "TOGGLE_GRID");      // Toggle drawing (G)rid
 
-    // TODO: Register all other gameplay Actions
     registerAction(sf::Keyboard::A, "MOVE_LEFT");
     registerAction(sf::Keyboard::D, "MOVE_RIGHT");
     registerAction(sf::Keyboard::W, "JUMP");
@@ -37,11 +36,6 @@ void Scene_Play::init(const std::string &levelPath)
 
 Vec2 Scene_Play::gridToMidPixel(float gridX, float gridY, std::shared_ptr<Entity> entity)
 {
-    // TODO: This function takes in a grid (x,y) position and an Entity
-    // Return a Vec2 indicating where the CENTER position of the Entity should be
-    // You must use the Entity's Animation size to position it correctly
-    // The size of the grid width and height is stored in m_gridSize.x and m_gridSize.y
-    // The bottom-left corner of the Animation should align with the bottom left of the grid cell
     if (entity->hasComponent<CAnimation>())
     {
         Vec2 halfAnimSize = entity->getComponent<CAnimation>().animation.getSize() / 2;
@@ -57,10 +51,6 @@ void Scene_Play::loadLevel(const std::string &filename)
 {
     // reset the entity manager every time we load a level
     m_entityManager = EntityManager();
-
-    // TODO: read in the level file and add the appropriate entities
-    // use the PlayerConfig struct m_playerConfig to store player properties
-    // this struct is defined at the top of Scene_Play.h
 
     std::ifstream fileIn(filename);
     std::string rowIdentifier;
@@ -104,44 +94,23 @@ void Scene_Play::loadLevel(const std::string &filename)
     }
 
     spawnPlayer();
-
-    // NOTE: all of the code below is sample code which shows you how to
-    // set up and use entities with the new syntax, it should be removed
-
-    // // IMPORTANT: always add the CAnimation component first so that gridToMidPixel can compute correctly
-    // // NOTE: Your final code should position the entity with the grid x,y position read from the file:
-
-    // NOTE: THIS IS INCREDIBLY IMPORTANT PLEASE READ THIS EXAMPLE
-    // Components are now returned as references rather than pointers
-    // If you do not specify a reference variable type, it will COPY the component
-    // Here is an example:
-    //
-    // This will COPY the transform into the variable 'transform1' - it is INCORRECT
-    // Any changes you make to transform1 will not be changed inside the entity
-    // auto transform1 = entity->getComponent<CTransform>();
-    //
-    // This will REFERENCE the transform with the variable 'transform2' - it is CORRECT
-    // Now any changes you make to transform2 will be changed inside the entity
-    // auto& transform2 = entity->getComponent<CTransform>();
 }
 
 void Scene_Play::spawnPlayer()
 {
     Animation &initialAnim = m_game->assets().getAnimation("Stand");
-    // here is a sample player entity which you can use to construct other entities
+
     m_player = m_entityManager.addEntity("Player");
     m_player->addComponent<CAnimation>(initialAnim, true);
     m_player->addComponent<CTransform>(gridToMidPixel(m_playerConfig.X, m_playerConfig.Y, m_player));
     m_player->addComponent<CBoundingBox>(Vec2(m_playerConfig.CX, m_playerConfig.CY));
 
-    // TODO: be sure to add the remaining components to the player
     m_player->addComponent<CGravity>(m_playerConfig.GRAVITY);
     m_player->addComponent<CState>("Stand", true);
 }
 
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
 {
-    // TODO: this should spawn a bullet at the given entity, going in the direction the entity is facing
     float bulletSpeed = 10; // pixels per frame
     int lifeSpanTime = 10;  // in seconds
     int lifetimeFrames = m_game->framerateLimit() * lifeSpanTime;
@@ -170,7 +139,6 @@ void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
 void Scene_Play::update()
 {
     m_entityManager.update();
-    // TODO: implement pause functionality
 
     if (!m_paused)
     {
@@ -277,7 +245,6 @@ void Scene_Play::sState()
 
 void Scene_Play::sLifespan()
 {
-    // TODO: Check lifespan of entities that have them, and destroy them if they go over
     for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities())
     {
         if (e->hasComponent<CLifeSpan>())
@@ -456,9 +423,6 @@ void Scene_Play::sDoAction(const Action &action)
 
 void Scene_Play::sAnimation()
 {
-    // TODO: Complete the Animation class code first
-
-    // TODO: set the animation of the player based on its CState component
     std::string playerState = m_player->getComponent<CState>().animation;
     CAnimation &currentAnimation = m_player->getComponent<CAnimation>();
 
@@ -468,8 +432,6 @@ void Scene_Play::sAnimation()
         m_player->addComponent<CAnimation>(anim, true);
     }
 
-    // TODO: for each entity with an animation, call entity->getComponent<CAnimation>().animation.update()
-    //       if the animation is not repeated, and it has ended, destroy the entity
     for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities())
     {
         if (e->hasComponent<CAnimation>())
@@ -484,8 +446,6 @@ void Scene_Play::sAnimation()
 
 void Scene_Play::onEnd()
 {
-    // TODO: When the scene ends, change back to the MENU scene
-    //       use m_game->changeScene(correct params);
     m_game->changeScene("menu", std::make_shared<Scene_Menu>(m_game));
 }
 

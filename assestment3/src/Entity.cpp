@@ -1,5 +1,4 @@
 #include "Entity.h"
-#include <stdexcept> // For std::out_of_range
 
 Entity::Entity(const size_t &id, const std::string &tag) : m_id(id), m_tag(tag) {}
 

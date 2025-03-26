@@ -36,12 +36,10 @@ void Scene_Menu::init()
 
 void Scene_Menu::update()
 {
-    // Puedes agregar lógica de animación o transición aquí si es necesario
 }
 
 void Scene_Menu::onEnd()
 {
-    // Limpiar recursos o realizar acciones cuando la escena termina
 }
 
 void Scene_Menu::sDoAction(const Action &action)

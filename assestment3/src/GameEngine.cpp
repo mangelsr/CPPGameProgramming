@@ -12,7 +12,7 @@ GameEngine::GameEngine(const std::string &path)
 void GameEngine::init(const std::string &path)
 {
     // Initialize window
-    m_window.create(sf::VideoMode(1280, 768), "My Game"); // Adjust as needed
+    m_window.create(sf::VideoMode(1280, 768), "My Game");
     m_window.setFramerateLimit(m_framerateLimit);
 
     // Load assets (textures, sounds, fonts, etc.)
@@ -42,7 +42,6 @@ void GameEngine::init(const std::string &path)
         }
     }
 
-    // Example: Add a scene (you'll likely load scenes from a file or configuration)
     std::shared_ptr<Scene> menuScene = std::make_shared<Scene_Menu>(this); // Example
     m_sceneMap["menu"] = menuScene;
     m_currentScene = "menu";

@@ -15,11 +15,8 @@ void EntityManager::update()
     }
     m_entitiesToAdd.clear();
 
-    // remove dead entities from the vector of all entities
     removeDeadEntities(m_entities);
 
-    // remove dead entities from each vector in the entity map
-    // C++17 way of iterating through [key,value] pairs in a map
     for (auto &[tag, entityVec] : m_entityMap)
     {
         removeDeadEntities(entityVec);
