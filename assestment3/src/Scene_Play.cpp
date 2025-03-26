@@ -62,9 +62,6 @@ void Scene_Play::loadLevel(const std::string &filename)
     // use the PlayerConfig struct m_playerConfig to store player properties
     // this struct is defined at the top of Scene_Play.h
 
-    // NOTE: all of the code below is sample code which shows you how to
-    // set up and use entities with the new syntax, it should be removed
-
     std::ifstream fileIn(filename);
     std::string rowIdentifier;
 
@@ -108,28 +105,11 @@ void Scene_Play::loadLevel(const std::string &filename)
 
     spawnPlayer();
 
-    // // some sample entities
-    // auto brick = m_entityManager.addEntity("tile");
+    // NOTE: all of the code below is sample code which shows you how to
+    // set up and use entities with the new syntax, it should be removed
+
     // // IMPORTANT: always add the CAnimation component first so that gridToMidPixel can compute correctly
-    // brick->addComponent<CAnimation>(m_game->assets().getAnimation("Brick"), true);
-    // brick->addComponent<CTransform>(Vec2(96, 480));
     // // NOTE: Your final code should position the entity with the grid x,y position read from the file:
-    // // brick->addComponent<CTransform>(gridToMidPixel(gridX, gridY, brick));
-
-    // if (brick->getComponent<CAnimation>().animation.getName() == "Brick")
-    // {
-    //     std::cout << "This could be a good way of identifying if a tile is a brick!\n";
-    // }
-
-    // auto block = m_entityManager.addEntity("tile");
-    // block->addComponent<CAnimation>(m_game->assets().getAnimation("Ground"), true);
-    // block->addComponent<CTransform>(Vec2(224, 480));
-    // // add a bounding box, this will now show up if we press the 'C' key
-    // block->addComponent<CBoundingBox>(m_game->assets().getAnimation("Ground").getSize());
-
-    // auto question = m_entityManager.addEntity("tile");
-    // question->addComponent<CAnimation>(m_game->assets().getAnimation("Question"), true);
-    // question->addComponent<CTransform>(Vec2(352, 480));
 
     // NOTE: THIS IS INCREDIBLY IMPORTANT PLEASE READ THIS EXAMPLE
     // Components are now returned as references rather than pointers
@@ -191,6 +171,7 @@ void Scene_Play::update()
     if (!m_paused)
     {
         sMovement();
+        sState();
         sLifespan();
         sCollision();
         sAnimation();
@@ -242,39 +223,6 @@ void Scene_Play::sMovement()
         input.canShoot = true;
     }
 
-    std::string newState = "";
-    std::string currentState = m_player->getComponent<CState>().state;
-
-    if (!input.left && !input.right && !input.up && !input.shoot && input.canJump)
-    {
-        newState = "Stand";
-    }
-    else if (!input.left && !input.right && !input.up && input.canJump && input.shoot)
-    {
-        newState = "StandShoot";
-    }
-    else if ((input.left || input.right) && (!input.up && input.canJump) && !input.shoot)
-    {
-        newState = "Run";
-    }
-    else if ((input.left || input.right) && (!input.up && input.canJump) && input.shoot)
-    {
-        newState = "RunShoot";
-    }
-    else if (!input.canJump && !input.shoot)
-    {
-        newState = "Jump";
-    }
-    else if (!input.canJump && !input.canShoot)
-    {
-        newState = "AirShoot";
-    }
-
-    if (newState != currentState)
-    {
-        m_player->addComponent<CState>(newState);
-    }
-
     // TODO: Implement gravity's effect on the player
     if (!input.canJump)
     {
@@ -308,7 +256,7 @@ void Scene_Play::sMovement()
     transform.prevPos = transform.pos;
     transform.pos += transform.velocity;
 
-    for (std::shared_ptr<Entity> bullet : m_entityManager.getEntities("Bullet"))
+    for (const std::shared_ptr<Entity> &bullet : m_entityManager.getEntities("Bullet"))
     {
         CTransform &bTransform = bullet->getComponent<CTransform>();
         bTransform.prevPos = bTransform.pos;
@@ -316,9 +264,58 @@ void Scene_Play::sMovement()
     }
 }
 
+void Scene_Play::sState()
+{
+    CInput &input = m_player->getComponent<CInput>();
+
+    std::string newState = "";
+    std::string currentState = m_player->getComponent<CState>().state;
+
+    if (!input.left && !input.right && !input.up && !input.shoot && input.canJump)
+    {
+        newState = "Stand";
+    }
+    else if (!input.left && !input.right && !input.up && input.canJump && input.shoot)
+    {
+        newState = "StandShoot";
+    }
+    else if ((input.left || input.right) && (!input.up && input.canJump) && !input.shoot)
+    {
+        newState = "Run";
+    }
+    else if ((input.left || input.right) && (!input.up && input.canJump) && input.shoot)
+    {
+        newState = "RunShoot";
+    }
+    else if (!input.canJump && !input.shoot)
+    {
+        newState = "Jump";
+    }
+    else if (!input.canJump && !input.canShoot)
+    {
+        newState = "AirShoot";
+    }
+
+    if (newState != currentState)
+    {
+        m_player->addComponent<CState>(newState);
+    }
+}
+
 void Scene_Play::sLifespan()
 {
     // TODO: Check lifespan of entities that have them, and destroy them if they go over
+    for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities())
+    {
+        if (e->hasComponent<CLifeSpan>())
+        {
+            CLifeSpan &lifeSpan = e->getComponent<CLifeSpan>();
+            if (int(m_currentFrame) > lifeSpan.frameCreated + lifeSpan.lifespan)
+            {
+                e->destroy();
+            }
+        }
+    }
 }
 
 void Scene_Play::sCollision()
@@ -496,7 +493,7 @@ void Scene_Play::sRender()
     // Draw all Entity textures/animations
     if (m_drawTextures)
     {
-        for (auto &e : m_entityManager.getEntities()) // Use a reference for efficiency
+        for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities()) // Use a reference for efficiency
         {
             auto &transform = e->getComponent<CTransform>(); // Use a reference for efficiency
 
@@ -517,7 +514,7 @@ void Scene_Play::sRender()
     // Draw all Entity collision bounding boxes with a RectangleShape
     if (m_drawCollision)
     {
-        for (auto &e : m_entityManager.getEntities())
+        for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities())
         {
             if (e->hasComponent<CBoundingBox>())
             {
@@ -566,4 +563,7 @@ void Scene_Play::sRender()
             }
         }
     }
+
+    if (!m_paused)
+        m_currentFrame++;
 }

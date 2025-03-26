@@ -39,6 +39,7 @@ protected:
     void update();
 
     void sMovement();
+    void sState();
     void sLifespan();
     void sCollision();
     void sDoAction(const Action &action);
