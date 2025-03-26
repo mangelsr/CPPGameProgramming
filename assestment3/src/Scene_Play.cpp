@@ -142,7 +142,10 @@ void Scene_Play::spawnPlayer()
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
 {
     // TODO: this should spawn a bullet at the given entity, going in the direction the entity is facing
-    float bulletSpeed = 6;
+    float bulletSpeed = 10; // pixels per frame
+    int lifeSpanTime = 10; // in seconds
+    int lifetimeFrames = m_game->framerateLimit() * lifeSpanTime;
+
     Animation &animation = m_game->assets().getAnimation(m_playerConfig.WEAPON);
     CTransform &eTransform = entity->getComponent<CTransform>();
 
@@ -161,6 +164,7 @@ void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
     bullet->addComponent<CAnimation>(animation, true);
     bullet->addComponent<CBoundingBox>(animation.getSize());
     bullet->addComponent<CTransform>(position, velocity, Vec2(1, 1), 0);
+    bullet->addComponent<CLifeSpan>(lifetimeFrames, m_currentFrame);
 }
 
 void Scene_Play::update()
