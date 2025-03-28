@@ -179,16 +179,6 @@ void Scene_Play::sMovement()
 
     transform.velocity.y += m_player->getComponent<CGravity>().gravity;
 
-    // if (!state.onGround)
-    // {
-    //     transform.velocity.y += m_player->getComponent<CGravity>().gravity;
-    // }
-    // else
-    // {
-    //     transform.velocity.y = 0;
-    //     input.canJump = true;
-    // }
-
     if (input.shoot && input.canShoot)
     {
         spawnBullet(m_player);
@@ -320,6 +310,20 @@ void Scene_Play::sCollision()
                 if (dy > 0)
                 {
                     pTransform.pos.y += yOverlap;
+
+                    std::string animName = tile->getComponent<CAnimation>().animation.getName();
+                    if (animName == "Question")
+                    {
+                        Animation &coinAnimation = m_game->assets().getAnimation("CoinSpin");
+                        std::shared_ptr<Entity> coinEntity = m_entityManager.addEntity("Coin");
+                        coinEntity->addComponent<CAnimation>(coinAnimation, true);
+                        coinEntity->addComponent<CLifeSpan>(30, m_currentFrame);
+                        coinEntity->addComponent<CTransform>(Vec2(tilePos.x, tilePos.y - 64));
+
+                        Animation &questionHit = m_game->assets().getAnimation("QuestionHit");
+                        tile->addComponent<CAnimation>(questionHit, true);
+                    }
+
                     if (pTransform.velocity.y < 0)
                         pTransform.velocity.y = 0;
                 }
