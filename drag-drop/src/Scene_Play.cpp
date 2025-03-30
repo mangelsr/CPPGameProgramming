@@ -9,6 +9,17 @@
 #include "Action.h"
 #include "Physics.h"
 
+bool IsInside(Vec2 pos, std::shared_ptr<Entity> entity)
+{
+    Vec2 ePos = entity->getComponent<CTransform>().pos;
+    Vec2 halfSize = entity->getComponent<CAnimation>().animation.getSize() / 2;
+
+    float dx = std::abs(pos.x - ePos.x);
+    float dy = std::abs(pos.y - ePos.y);
+
+    return (dx <= halfSize.x) && (dy <= halfSize.y);
+}
+
 Scene_Play::Scene_Play(GameEngine *gameEngine, const std::string &levelPath)
     : Scene(gameEngine), m_levelPath(levelPath)
 {
@@ -69,6 +80,7 @@ void Scene_Play::loadLevel(const std::string &filename)
             tile->addComponent<CAnimation>(animation, true);
             tile->addComponent<CBoundingBox>(animation.getSize());
             tile->addComponent<CTransform>(gridToMidPixel(gridX, gridY, tile));
+            tile->addComponent<CDraggable>();
         }
         else if (rowIdentifier == "Dec")
         {
@@ -81,6 +93,7 @@ void Scene_Play::loadLevel(const std::string &filename)
             std::shared_ptr<Entity> dec = m_entityManager.addEntity("Dec");
             dec->addComponent<CAnimation>(animation, true);
             dec->addComponent<CTransform>(gridToMidPixel(gridX, gridY, dec));
+            dec->addComponent<CDraggable>();
         }
         else if (rowIdentifier == "Player")
         {
@@ -147,6 +160,7 @@ void Scene_Play::update()
         sLifespan();
         sCollision();
         sAnimation();
+        sDragAndDrop();
     }
     sRender();
 }
@@ -387,6 +401,24 @@ void Scene_Play::sDoAction(const Action &action)
         {
             onEnd();
         }
+
+        else if (action.name() == "LEFT_CLICK")
+        {
+            Vec2 worldPos = windowToWorld(m_mousePos);
+            for (auto &e : m_entityManager.getEntities())
+            {
+                if (e->hasComponent<CDraggable>() && IsInside(worldPos, e))
+                {
+                    std::cout << "Clicked Entity: " << e->getComponent<CAnimation>().animation.getName() << std::endl;
+                    e->getComponent<CDraggable>().dragging = !e->getComponent<CDraggable>().dragging;
+                }
+            }
+        }
+        else if (action.name() == "MOUSE_MOVE")
+        {
+            m_mousePos = action.pos();
+        }
+
         else if (action.name() == "MOVE_LEFT")
         {
             m_player->getComponent<CInput>().left = true;
@@ -425,6 +457,18 @@ void Scene_Play::sDoAction(const Action &action)
     }
 }
 
+void Scene_Play::sDragAndDrop()
+{
+    for (auto &e : m_entityManager.getEntities())
+    {
+        if (e->hasComponent<CDraggable>() && e->getComponent<CDraggable>().dragging)
+        {
+            Vec2 worldPos = windowToWorld(m_mousePos);
+            e->getComponent<CTransform>().pos = worldPos;
+        }
+    }
+}
+
 void Scene_Play::sAnimation()
 {
     std::string playerState = m_player->getComponent<CState>().animation;
@@ -450,7 +494,22 @@ void Scene_Play::sAnimation()
 
 void Scene_Play::onEnd()
 {
+    m_hasEnded = true;
     m_game->changeScene("menu", std::make_shared<Scene_Menu>(m_game));
+}
+
+// This method only works on games that do not rotate or zoom-in/out the view
+// just scroll on x and/or y
+Vec2 Scene_Play::windowToWorld(const Vec2 &window) const
+{
+    sf::RenderWindow &win = m_game->window();
+    sf::Vector2u winSize = win.getSize();
+    sf::Vector2f viewCenter = win.getView().getCenter();
+
+    float wx = viewCenter.x - (winSize.x / 2);
+    float wy = viewCenter.y - (winSize.y / 2);
+
+    return Vec2(window.x + wx, window.y + wy);
 }
 
 void Scene_Play::sRender()
@@ -550,6 +609,13 @@ void Scene_Play::sRender()
             }
         }
     }
+
+    Vec2 worldPos = windowToWorld(m_mousePos);
+    m_mouseShape.setFillColor(sf::Color(255, 0, 0));
+    m_mouseShape.setRadius(4);
+    m_mouseShape.setOrigin(2, 2);
+    m_mouseShape.setPosition(worldPos.x, worldPos.y);
+    m_game->window().draw(m_mouseShape);
 
     if (!m_paused)
         m_currentFrame++;

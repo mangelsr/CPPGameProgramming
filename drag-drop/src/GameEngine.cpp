@@ -85,6 +85,50 @@ void GameEngine::sUserInput()
                 std::string actionName = it->second;
                 scene->doAction(Action(actionName, actionType));
             }
+
+            auto mousePos = sf::Mouse::getPosition(m_window); // important note getMouse position relative to window
+            Vec2 mpos(mousePos.x, mousePos.y);
+
+            if (event.type == sf::Event::MouseButtonPressed)
+            {
+                switch (event.mouseButton.button)
+                {
+                case sf::Mouse::Left:
+                    currentScene()->doAction(Action("LEFT_CLICK", "START", mpos));
+                    break;
+                case sf::Mouse::Middle:
+                    currentScene()->doAction(Action("MIDDLE_CLICK", "START", mpos));
+                    break;
+                case sf::Mouse::Right:
+                    currentScene()->doAction(Action("RIGHT_CLICK", "START", mpos));
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            if (event.type == sf::Event::MouseButtonReleased)
+            {
+                switch (event.mouseButton.button)
+                {
+                case sf::Mouse::Left:
+                    currentScene()->doAction(Action("LEFT_CLICK", "END", mpos));
+                    break;
+                case sf::Mouse::Middle:
+                    currentScene()->doAction(Action("MIDDLE_CLICK", "END", mpos));
+                    break;
+                case sf::Mouse::Right:
+                    currentScene()->doAction(Action("RIGHT_CLICK", "END", mpos));
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            if (event.type == sf::Event::MouseMoved)
+            {
+                currentScene()->doAction(Action("MOUSE_MOVE", "START", Vec2(event.mouseMove.x, event.mouseMove.y)));
+            }
         }
     }
 }

@@ -31,6 +31,9 @@ protected:
     const Vec2 m_gridSize = {64, 64};
     sf::Text m_gridText;
 
+    Vec2 m_mousePos;
+    sf::CircleShape m_mouseShape;
+
     void init(const std::string &levelPath);
     Vec2 gridToMidPixel(float gridX, float gridY, std::shared_ptr<Entity> entity);
     void loadLevel(const std::string &filename);
@@ -38,6 +41,9 @@ protected:
     void spawnBullet(std::shared_ptr<Entity> entity);
     void update();
 
+    Vec2 windowToWorld(const Vec2 &windowPos) const;
+
+    void sDragAndDrop();
     void sMovement();
     void sState();
     void sLifespan();
@@ -45,7 +51,7 @@ protected:
     void sDoAction(const Action &action);
     void sAnimation();
     void sRender();
-    
+
     void onEnd();
 
 public:
