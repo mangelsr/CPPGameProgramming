@@ -44,6 +44,7 @@ public:
     bool shoot = false;
     bool canShoot = true;
     bool canJump = true;
+    bool maxHeightReached = false;
 
     CInput() {}
 };
