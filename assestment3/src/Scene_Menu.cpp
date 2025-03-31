@@ -32,6 +32,8 @@ void Scene_Menu::init()
     registerAction(sf::Keyboard::S, "DOWN");
     registerAction(sf::Keyboard::D, "SELECT");
     registerAction(sf::Keyboard::Escape, "BACK");
+    
+    m_game->window().setView(m_game->window().getDefaultView());
 }
 
 void Scene_Menu::update()
