@@ -147,8 +147,8 @@ void Scene_Play::update()
         sLifespan();
         sCollision();
         sAnimation();
+        m_currentFrame++;
     }
-    sRender();
 }
 
 void Scene_Play::sMovement()
@@ -169,12 +169,26 @@ void Scene_Play::sMovement()
         transform.scale.x = 1;
     }
 
-    if (input.up && input.canJump)
+    if (input.up && !input.maxHeightReached)
     {
-        transform.velocity.y = -m_playerConfig.JUMP;
-        input.canJump = false;
-        state.onGround = false;
-        state.animation = "Jump";
+        // TODO:
+        // Replace -10 and -2 with calculated values based on
+        // m_playerConfig.JUMP config
+        if (input.canJump && state.onGround)
+        {
+            transform.velocity.y = -10;
+            state.onGround = false;
+            input.canJump = false;
+            state.animation = "Jump";
+        }
+        else if (!state.onGround && transform.velocity.y < 0)
+        {
+            if (transform.velocity.y > -m_playerConfig.JUMP)
+                transform.velocity.y -= 2;
+            else
+
+                input.maxHeightReached = true;
+        }
     }
 
     transform.velocity.y += m_player->getComponent<CGravity>().gravity;
@@ -323,6 +337,10 @@ void Scene_Play::sCollision()
                         Animation &questionHit = m_game->assets().getAnimation("QuestionHit");
                         tile->addComponent<CAnimation>(questionHit, true);
                     }
+                    else if (animName == "Brick")
+                    {
+                        tile->addComponent<CAnimation>(explosionAnim, false);
+                    }
 
                     if (pTransform.velocity.y < 0)
                         pTransform.velocity.y = 0;
@@ -333,6 +351,7 @@ void Scene_Play::sCollision()
                     pTransform.velocity.y = 0;
                     pState.onGround = true;
                     pInput.canJump = true;
+                    pInput.maxHeightReached = false;
 
                     if (prevOverlap.y <= 0 && pTransform.velocity.y > 0)
                     {
@@ -450,6 +469,7 @@ void Scene_Play::sAnimation()
 
 void Scene_Play::onEnd()
 {
+    m_hasEnded = true;
     m_game->changeScene("menu", std::make_shared<Scene_Menu>(m_game));
 }
 
@@ -550,7 +570,4 @@ void Scene_Play::sRender()
             }
         }
     }
-
-    if (!m_paused)
-        m_currentFrame++;
 }
