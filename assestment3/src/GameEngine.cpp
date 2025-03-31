@@ -51,7 +51,8 @@ void GameEngine::update()
 {
     if (currentScene())
     {
-        currentScene()->simulate(m_simulationSpeed);
+        currentScene()->update();
+        // currentScene()->simulate(m_simulationSpeed);
     }
 }
 
