@@ -12,7 +12,7 @@ GameEngine::GameEngine(const std::string &path)
 void GameEngine::init(const std::string &path)
 {
     // Initialize window
-    m_window.create(sf::VideoMode(1280, 768), "My Game");
+    m_window.create(sf::VideoMode(1280, 768), "Definitely Not Zelda");
     m_window.setFramerateLimit(m_framerateLimit);
 
     // Load assets (textures, sounds, fonts, etc.)
@@ -24,7 +24,7 @@ void GameEngine::init(const std::string &path)
         {
             std::string name, location;
             fileIn >> name >> location;
-            m_assets.addTexture(name, path + location);
+            m_assets.addTexture(name, location);
         }
         else if (rowIdentifier == "Animation")
         {
@@ -34,11 +34,17 @@ void GameEngine::init(const std::string &path)
             const sf::Texture &texture = m_assets.getTexture(textureName);
             m_assets.addAnimation(name, Animation(name, texture, frameCount, speed));
         }
+        else if (rowIdentifier == "Sound")
+        {
+            std::string name, location;
+            fileIn >> name >> location;
+            m_assets.addSound(name, location);
+        }
         else if (rowIdentifier == "Font")
         {
             std::string name, location;
             fileIn >> name >> location;
-            m_assets.addFont(name, path + location);
+            m_assets.addFont(name, location);
         }
     }
 

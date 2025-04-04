@@ -75,15 +75,6 @@ public:
         : animation(animation), repeat(r) {}
 };
 
-class CGravity : public Component
-{
-public:
-    float gravity = 0;
-
-    CGravity() {}
-    CGravity(float g) : gravity(g) {}
-};
-
 class CState : public Component
 {
 public:

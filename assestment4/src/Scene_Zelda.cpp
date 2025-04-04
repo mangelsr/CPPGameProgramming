@@ -82,6 +82,10 @@ void Scene_Zelda::update()
     m_currentFrame++;
 }
 
+void Scene_Zelda::onEnd()
+{
+}
+
 void Scene_Zelda::sMovement()
 {
     // STUDENT TODO:
