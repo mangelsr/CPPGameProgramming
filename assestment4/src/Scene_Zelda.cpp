@@ -1,5 +1,25 @@
 #include "Scene_Zelda.h"
 
+Scene_Zelda::Scene_Zelda(GameEngine *gameEngine, const std::string &levelPath)
+    : Scene(gameEngine), m_levelPath(levelPath)
+{
+    init(m_levelPath);
+}
+
+void Scene_Zelda::init(const std::string &levelPath)
+{
+    loadLevel(levelPath);
+
+    // STUDENT TODO:
+    // Register the actions required to play the game
+
+    registerAction(sf::Keyboard::Escape, "QUIT");
+    registerAction(sf::Keyboard::P, "PAUSE");
+    registerAction(sf::Keyboard::Y, "TOGGLE_FOLLOW");    // Toggle Follow/Room Camera
+    registerAction(sf::Keyboard::T, "TOGGLE_TEXTURE");   // Toggle drawing (T)extures
+    registerAction(sf::Keyboard::C, "TOGGLE_COLLISION"); // Toggle drawing (C)ollision Boxes
+}
+
 void Scene_Zelda::loadLevel(const std::string &filename)
 {
     m_entityManager = EntityManager();
@@ -164,4 +184,103 @@ void Scene_Zelda::sCamera()
 
     // then set the window view
     m_game->window().setView(view);
+}
+
+void Scene_Zelda::sRender()
+{
+    // Color the background darker when paused
+    if (!m_paused)
+    {
+        m_game->window().clear(sf::Color(100, 100, 255));
+    }
+    else
+    {
+        m_game->window().clear(sf::Color(50, 50, 150));
+    }
+
+    // Draw all Entity textures/animations
+    if (m_drawTextures)
+    {
+        for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities()) // Use a reference for efficiency
+        {
+            CTransform &transform = e->getComponent<CTransform>(); // Use a reference for efficiency
+
+            if (e->hasComponent<CAnimation>())
+            {
+                Animation &animation = e->getComponent<CAnimation>().animation; // Use a reference!
+                sf::Sprite &sprite = animation.getSprite();                     // Get a reference to the sprite
+
+                sprite.setRotation(transform.angle);
+                sprite.setPosition(transform.pos.x, transform.pos.y);
+                sprite.setScale(transform.scale.x, transform.scale.y);
+
+                m_game->window().draw(sprite);
+            }
+        }
+    }
+
+    // Draw all Entity collision bounding boxes with a RectangleShape
+    if (m_drawCollision)
+    {
+        for (const std::shared_ptr<Entity> &e : m_entityManager.getEntities())
+        {
+            if (e->hasComponent<CBoundingBox>())
+            {
+                CBoundingBox &box = e->getComponent<CBoundingBox>();
+                CTransform &transform = e->getComponent<CTransform>();
+
+                sf::RectangleShape rect;
+                rect.setSize(sf::Vector2f(box.size.x - 1, box.size.y - 1)); // Subtract 1 for visibility
+                rect.setOrigin(sf::Vector2f(box.halfSize.x, box.halfSize.y));
+                rect.setPosition(transform.pos.x, transform.pos.y);
+                rect.setFillColor(sf::Color(0, 0, 0, 0));
+
+                if (box.blockMove && box.blockVision)
+                {
+                    rect.setOutlineColor(sf::Color::Black);
+                }
+                else if (box.blockMove)
+                {
+                    rect.setOutlineColor(sf::Color::Blue);
+                }
+                else if (box.blockVision)
+                {
+                    rect.setOutlineColor(sf::Color::Red);
+                }
+                else
+                {
+                    rect.setOutlineColor(sf::Color::White);
+                }
+
+                rect.setOutlineThickness(1);
+                m_game->window().draw(rect);
+            }
+
+            Vec2 playerCenter = m_player->getComponent<CTransform>().pos;
+
+            if (e->hasComponent<CFollowPlayer>())
+            {
+                Vec2 enemyCenter = e->getComponent<CTransform>().pos;
+
+                sf::Vertex line[] = {
+                    sf::Vertex(sf::Vector2f(playerCenter.x, playerCenter.y), sf::Color::Black),
+                    sf::Vertex(sf::Vector2f(enemyCenter.x, enemyCenter.y), sf::Color::Black)};
+                m_game->window().draw(line, 2, sf::Lines);
+            }
+            else if (e->hasComponent<CPatrol>())
+            {
+                CPatrol &patrol = e->getComponent<CPatrol>();
+
+                for (const Vec2 &point : patrol.positions)
+                {
+                    sf::CircleShape waypoint(3.f);
+                    waypoint.setFillColor(sf::Color::Black);
+                    waypoint.setOutlineThickness(1.f);
+                    waypoint.setOrigin(3.f, 3.f);
+                    waypoint.setPosition(point.x, point.y);
+                    m_game->window().draw(waypoint);
+                }
+            }
+        }
+    }
 }
