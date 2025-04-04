@@ -94,6 +94,10 @@ This game must have the following features:
 - Room (x,y) is defined by the rectangle (x*w, y*h, w, h) where w and h are the window width and height respectively.
 - When NotLink moves to a new room, the camera should center to that room
 
+### Custom Level
+
+- Include your own custom level as `level2.txt` which contains at least 2 rooms worth of interesting gameplay
+
 ### Misc
 
 - The 'P' key should pause the game
