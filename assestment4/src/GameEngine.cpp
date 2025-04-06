@@ -49,16 +49,16 @@ void GameEngine::init(const std::string &path)
     }
 
     std::shared_ptr<Scene> menuScene = std::make_shared<Scene_Menu>(this); // Example
-    m_sceneMap["menu"] = menuScene;
-    m_currentScene = "menu";
+    changeScene("menu", menuScene);
 }
 
 void GameEngine::update()
 {
-    if (currentScene())
+    std::shared_ptr<Scene> scene = currentScene();
+    if (scene != nullptr)
     {
-        currentScene()->update();
-        // currentScene()->simulate(m_simulationSpeed);
+        scene->update();
+        // scene->simulate(m_simulationSpeed);
     }
 }
 
@@ -140,12 +140,14 @@ void GameEngine::run()
     while (m_running)
     {
         sUserInput();
+
         update();
 
-        if (currentScene())
+        std::shared_ptr<Scene> scene = currentScene();
+        if (scene != nullptr && m_window.isOpen())
         {
-            currentScene()->sRender();
-            window().display();
+            scene->sRender();
+            m_window.display();
         }
     }
 }
