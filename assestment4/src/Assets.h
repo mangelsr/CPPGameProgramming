@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <memory>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
@@ -13,6 +14,7 @@ class Assets
 private:
     std::map<std::string, sf::Texture> textures;
     std::map<std::string, Animation> animations;
+    std::map<std::string, sf::SoundBuffer> soundBuffers;
     std::map<std::string, sf::Sound> sounds;
     std::map<std::string, sf::Font> fonts;
 

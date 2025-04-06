@@ -22,15 +22,17 @@ void Assets::addAnimation(const std::string &name, const Animation &animation)
 
 void Assets::addSound(const std::string &name, const std::string &path)
 {
-    sf::SoundBuffer buffer; // Need a buffer for the sound
+    sf::SoundBuffer buffer;
     if (!buffer.loadFromFile(path))
     {
-        std::cerr << "Error loading sound: " << path << std::endl;
+        std::cerr << "Error loading sound buffer: " << path << std::endl;
         return;
     }
-    sf::Sound sound;
-    sound.setBuffer(buffer); // Associate the buffer with the sound
-    sounds[name] = sound;
+
+    soundBuffers[name] = std::move(buffer);
+
+    sounds[name] = sf::Sound();
+    sounds[name].setBuffer(soundBuffers[name]);
 }
 
 void Assets::addFont(const std::string &name, const std::string &path)
