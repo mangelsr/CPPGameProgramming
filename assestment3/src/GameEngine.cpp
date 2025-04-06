@@ -12,7 +12,7 @@ GameEngine::GameEngine(const std::string &path)
 void GameEngine::init(const std::string &path)
 {
     // Initialize window
-    m_window.create(sf::VideoMode(1280, 768), "My Game");
+    m_window.create(sf::VideoMode(1280, 768), "Mega Mario");
     m_window.setFramerateLimit(m_framerateLimit);
 
     // Load assets (textures, sounds, fonts, etc.)
