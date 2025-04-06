@@ -82,6 +82,11 @@ Vec2 Vec2::normalize() const
     return Vec2(x / m, y / m);
 }
 
+float Vec2::cross(Vec2 &rhs) const
+{
+    return x * rhs.y - y * rhs.x;
+}
+
 std::ostream &operator<<(std::ostream &os, const Vec2 &vec)
 {
     os << "(" << vec.x << ", " << vec.y << ")";

@@ -28,6 +28,7 @@ public:
 
     float module() const;
     Vec2 normalize() const;
+    float cross(Vec2 &rhs) const;
 
     friend std::ostream &operator<<(std::ostream &os, const Vec2 &vec);
 };
