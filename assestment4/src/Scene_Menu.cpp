@@ -33,6 +33,9 @@ void Scene_Menu::init()
     registerAction(sf::Keyboard::D, "SELECT");
     registerAction(sf::Keyboard::Escape, "BACK");
 
+    m_sound = m_game->assets().getSound("STitleTheme");
+    m_sound.play();
+
     m_game->window().setView(m_game->window().getDefaultView());
 }
 
@@ -63,7 +66,8 @@ void Scene_Menu::sDoAction(const Action &action)
             std::string levelPath = m_levelPaths[m_selectedMenuIndex];
             if (!levelPath.empty())
             {
-                m_game->changeScene("play", std::make_shared<Scene_Zelda>(m_game, levelPath), true);
+                m_sound.stop();
+                m_game->changeScene("play", std::make_shared<Scene_Zelda>(m_game, levelPath));
             }
         }
         else if (action.name() == "BACK")
