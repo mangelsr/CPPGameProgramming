@@ -12,7 +12,6 @@ class Scene_Zelda : public Scene
     struct PlayerConfig
     {
         float X, Y, CX, CY, SPEED, HEALTH;
-        std::string WEAPON;
     };
 
 protected:
@@ -29,6 +28,7 @@ protected:
 
     void spawnPlayer();
     void spawnSword(std::shared_ptr<Entity> entity);
+    void locateSword(std::shared_ptr<Entity> wielder, std::shared_ptr<Entity> sword);
     Vec2 getPosition(int rx, int ry, int tx, int ty) const;
 
     void onEnd();
