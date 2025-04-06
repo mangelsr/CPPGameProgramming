@@ -22,7 +22,11 @@ Animation::Animation(const std::string &name, const sf::Texture &t, size_t frame
 void Animation::update()
 {
     m_currentFrame++;
-    size_t frame = (m_currentFrame / m_speed) % m_frameCount;
+    size_t frame = 0;
+
+    if (m_frameCount > 1 && m_speed > 0)
+        frame = (m_currentFrame / m_speed) % m_frameCount;
+
     m_sprite.setTextureRect(sf::IntRect(std::floor(frame) * m_size.x, 0, m_size.x, m_size.y));
 }
 
