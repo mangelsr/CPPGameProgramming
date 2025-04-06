@@ -156,7 +156,7 @@ Sound N P
 
 #### Player Specification
 
-Player X Y BX BY S H I
+Player X Y BX BY S H
 
 | Attribute         | Abbreviation | Type     | Notes                      |
 |-------------------|--------------|--------- |----------------------------|
