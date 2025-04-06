@@ -35,6 +35,7 @@ Texture TexTreeMonster4 assets/images/zelda_treemonster4.png
 Texture TexTreeMonster5 assets/images/zelda_treemonster5.png
 Texture TexTreeMonster6 assets/images/zelda_treemonster6.png
 Texture TexHeart assets/images/zelda_heart.png
+Texture TexSword assets/images/zelda_sword.png
 Animation ArmosStandBack TexArmosStandBack 2 12
 Animation ArmosStandFront TexArmosStandFront 2 12
 Animation TileBlack TexBlack 1 0
@@ -48,15 +49,16 @@ Animation TileLake6 TexLake6 1 0
 Animation TileLake7 TexLake7 1 0
 Animation TileLake8 TexLake8 1 0
 Animation TileLake9 TexLake9 1 0
-Animation LinkAtkDown TexAtkDown 4 4
-Animation LinkAtkRight TexAtkRight 4 4
-Animation LinkAtkUp TexAtkUp 4 4
+Animation LinkAtkDown TexAtkDown 1 0
+Animation LinkAtkRight TexAtkRight 1 0
+Animation LinkAtkUp TexAtkUp 1 0
 Animation LinkMoveDown TexMoveDown 2 8
 Animation LinkMoveRight TexMoveRight 2 8
 Animation LinkMoveUp TexMoveUp 2 8
 Animation LinkStandDown TexStandDown 1 0
 Animation LinkStandRight TexStandRight 1 0
 Animation LinkStandUp TexStandUp 1 0
+Animation Sword TexSword 1 0
 Animation TileRock1 TexRock1 1 0
 Animation TileRock2 TexRock2 1 0
 Animation TileRock3 TexRock3 1 0
