@@ -41,10 +41,8 @@ public:
     bool down = false;
     bool left = false;
     bool right = false;
-    bool shoot = false;
-    bool canShoot = true;
-    bool canJump = true;
-    bool maxHeightReached = false;
+    bool attack = false;
+    bool canAttack = true;
 
     CInput() {}
 };
@@ -61,7 +59,7 @@ public:
     CBoundingBox(const Vec2 &s)
         : size(s), halfSize(s.x / 2, s.y / 2) {}
     CBoundingBox(const Vec2 &s, bool m, bool v)
-        : size(s), blockMove(m), blockVision(v), halfSize(s.x / 2, s.y / 2) {}
+        : size(s), halfSize(s.x / 2, s.y / 2), blockMove(m), blockVision(v) {}
 };
 
 class CAnimation : public Component
@@ -78,11 +76,10 @@ public:
 class CState : public Component
 {
 public:
-    std::string animation = "Stand";
-    bool onGround = true;
+    std::string animation = "LinkStandDown";
 
     CState() {}
-    CState(const std::string &anim, bool ground) : animation(anim), onGround(ground) {}
+    CState(const std::string &anim) : animation(anim) {}
 };
 
 class CDamage : public Component
