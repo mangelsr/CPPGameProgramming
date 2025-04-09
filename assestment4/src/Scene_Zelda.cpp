@@ -131,12 +131,9 @@ void Scene_Zelda::spawnSword(std::shared_ptr<Entity> entity)
 {
     CInput &input = entity->getComponent<CInput>();
     if (!input.canAttack)
-    {
         return;
-    }
 
     Animation &swordAnimation = m_game->assets().getAnimation("Sword");
-    Vec2 spriteSize = swordAnimation.getSize();
 
     std::shared_ptr<Entity> sword = m_entityManager.addEntity("Sword");
     sword->addComponent<CLifeSpan>(30, m_currentFrame);
