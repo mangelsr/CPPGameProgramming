@@ -12,9 +12,9 @@ public:
 
     static Vec2 GetPreviousOverlap(std::shared_ptr<Entity> a, std::shared_ptr<Entity> b);
 
-    bool IsInside(const Vec2 &pos, std::shared_ptr<Entity> e);
+    static bool IsInside(const Vec2 &pos, std::shared_ptr<Entity> e);
 
-    Intersect LineIntersect(const Vec2 &a, const Vec2 &b, const Vec2 &c, const Vec2 &d);
+    static Intersect LineIntersect(const Vec2 &a, const Vec2 &b, const Vec2 &c, const Vec2 &d);
 
-    bool EntityIntersect(const Vec2 &a, const Vec2 &b, std::shared_ptr<Entity> e);
+    static bool EntityIntersect(const Vec2 &a, const Vec2 &b, std::shared_ptr<Entity> e);
 };
