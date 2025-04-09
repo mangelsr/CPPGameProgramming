@@ -34,6 +34,12 @@ protected:
     void onEnd();
     void update();
 
+    void entityTileCollisions();
+    void playerEnemyCollisions();
+    void swordNPCCollisions();
+    void entityHeartCollisions();
+    void blackTileCollisions();
+
     void sAI();
     void sAnimation();
     void sCamera();

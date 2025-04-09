@@ -2,6 +2,7 @@
 
 #include "Scene_Zelda.h"
 #include "Scene_Menu.h"
+#include "Physics.h"
 
 Scene_Zelda::Scene_Zelda(GameEngine *gameEngine, const std::string &levelPath)
     : Scene(gameEngine), m_levelPath(levelPath)
@@ -44,7 +45,11 @@ void Scene_Zelda::loadLevel(const std::string &filename)
 
             Animation &animation = m_game->assets().getAnimation(animName);
 
-            std::shared_ptr<Entity> tile = m_entityManager.addEntity("Tile");
+            std::string tag = "Tile";
+            if (animName == "TileHeart")
+                tag = "Heart";
+
+            std::shared_ptr<Entity> tile = m_entityManager.addEntity(tag);
             tile->addComponent<CAnimation>(animation, true);
             tile->addComponent<CBoundingBox>(animation.getSize(), blockMovement, blockVision);
             tile->addComponent<CTransform>(getPosition(rx, ry, tx, ty));
@@ -138,11 +143,8 @@ void Scene_Zelda::spawnSword(std::shared_ptr<Entity> entity)
     sword->addComponent<CDamage>(1);
     sword->addComponent<CAnimation>(swordAnimation, true);
     sword->addComponent<CTransform>();
-    locateSword(m_player, sword);
 
-    float swordAngle = sword->getComponent<CTransform>().angle;
-    sword->addComponent<CBoundingBox>(
-        swordAngle != 0 ? Vec2(spriteSize.y, spriteSize.x) : Vec2(spriteSize.x, spriteSize.y));
+    locateSword(m_player, sword);
 
     sf::Sound &slashSfx = m_game->assets().getSound("SSwordSlash");
     slashSfx.play();
@@ -205,6 +207,9 @@ void Scene_Zelda::locateSword(std::shared_ptr<Entity> wielder, std::shared_ptr<E
     swordTransform.scale = swordScale;
     swordTransform.angle = swordAngle;
     swordTransform.pos = swordPos;
+
+    Vec2 swordBBox = swordAngle != 0 ? Vec2(spriteSize.y, spriteSize.x) : Vec2(spriteSize.x, spriteSize.y);
+    sword->addComponent<CBoundingBox>(swordBBox);
 
     swordTransform.pos += wielderTransform.velocity;
 }
@@ -349,10 +354,66 @@ void Scene_Zelda::sDoAction(const Action &action)
 
 void Scene_Zelda::sAI()
 {
-    // STUDENT TODO: Implement Enemy AI
-    //
-    // Implement Follow behavior
-    // Implement Patrol behavior
+    Vec2 &playerPos = m_player->getComponent<CTransform>().pos;
+
+    for (const std::shared_ptr<Entity> &npc : m_entityManager.getEntities("NPC"))
+    {
+        // Implement Follow behavior
+        if (npc->hasComponent<CFollowPlayer>())
+        {
+            CFollowPlayer &follow = npc->getComponent<CFollowPlayer>();
+            CTransform &transform = npc->getComponent<CTransform>();
+
+            bool hasLineSight = true;
+            for (const std::shared_ptr<Entity> &otherEntity : m_entityManager.getEntities())
+            {
+                if (otherEntity != m_player &&
+                    otherEntity != npc &&
+                    otherEntity->hasComponent<CBoundingBox>() &&
+                    otherEntity->getComponent<CBoundingBox>().blockVision)
+                {
+                    if (Physics::EntityIntersect(playerPos, transform.pos, otherEntity))
+                    {
+                        hasLineSight = false;
+                        break;
+                    }
+                }
+            }
+
+            Vec2 movement;
+            if (hasLineSight)
+                movement = (playerPos - transform.pos).normalize() * follow.speed;
+
+            else
+                movement = (follow.home - transform.pos).normalize() * follow.speed;
+
+            transform.prevPos = transform.pos;
+            transform.pos += movement;
+        }
+
+        // Implement Patrol behavior
+        if (npc->hasComponent<CPatrol>())
+        {
+            CPatrol &patrol = npc->getComponent<CPatrol>();
+            CTransform &transform = npc->getComponent<CTransform>();
+
+            Vec2 origin = transform.pos;
+            Vec2 destination = patrol.positions[patrol.currentPosition];
+
+            Vec2 diff = destination - origin;
+
+            if (int(diff.x) == 0 && int(diff.y) == 0)
+            {
+                patrol.currentPosition = (patrol.currentPosition + 1) % patrol.positions.size();
+            }
+            else
+            {
+                Vec2 movement = diff.normalize() * patrol.speed;
+                transform.prevPos = transform.pos;
+                transform.pos += movement;
+            }
+        }
+    }
 }
 
 void Scene_Zelda::sStatus()
@@ -377,7 +438,12 @@ void Scene_Zelda::sStatus()
         {
             CInvincibility &invincibility = e->getComponent<CInvincibility>();
             if (invincibility.iframes <= 0)
+            {
                 e->removeComponent<CInvincibility>();
+                Animation &animation = e->getComponent<CAnimation>().animation;
+                sf::Sprite &sprite = animation.getSprite();
+                sprite.setColor(sf::Color(255, 255, 255, 255));
+            }
             else
                 invincibility.iframes--;
         }
@@ -386,15 +452,181 @@ void Scene_Zelda::sStatus()
 
 void Scene_Zelda::sCollision()
 {
-    // STUDENT TODO:
-    //
     // Implement entity - tile collisions
+    entityTileCollisions();
+
     // Implement player - enemy collisions with appropriate damage calculations
+    playerEnemyCollisions();
+
     // Implement Sword - NPC collisions
+    swordNPCCollisions();
+
     // Implement black tile collisions / 'teleporting'
+    blackTileCollisions();
+
     // Implement entity - heart collisions and life gain logic
-    //
-    // You may want to use helper functions for these behaviors or this function will get long
+    entityHeartCollisions();
+}
+
+void Scene_Zelda::entityTileCollisions()
+{
+    for (const std::shared_ptr<Entity> &entity : m_entityManager.getEntities())
+    {
+        if (entity->tag() != "Tile")
+        {
+            CTransform &eTransform = entity->getComponent<CTransform>();
+            CBoundingBox &eBBox = entity->getComponent<CBoundingBox>();
+
+            for (const std::shared_ptr<Entity> &tile : m_entityManager.getEntities("Tile"))
+            {
+                if (tile->hasComponent<CBoundingBox>() && tile->getComponent<CBoundingBox>().blockMove)
+                {
+                    Vec2 overlap = Physics::GetOverlap(entity, tile);
+
+                    if (overlap.x > 0 && overlap.y > 0)
+                    {
+                        Vec2 tilePos = tile->getComponent<CTransform>().pos;
+                        Vec2 tileHalfSize = tile->getComponent<CBoundingBox>().halfSize;
+
+                        float dx = eTransform.pos.x - tilePos.x;
+                        float dy = eTransform.pos.y - tilePos.y;
+
+                        float xOverlap = eBBox.halfSize.x + tileHalfSize.x - abs(dx);
+                        float yOverlap = eBBox.halfSize.y + tileHalfSize.y - abs(dy);
+
+                        if (xOverlap < yOverlap)
+                        {
+                            if (dx > 0)
+                            {
+                                eTransform.pos.x += xOverlap;
+                            }
+                            else
+                            {
+                                eTransform.pos.x -= xOverlap;
+                            }
+                        }
+                        else
+                        {
+                            if (dy > 0)
+                            {
+                                eTransform.pos.y += yOverlap;
+                            }
+                            else
+                            {
+                                eTransform.pos.y -= yOverlap;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Scene_Zelda::playerEnemyCollisions()
+{
+    if (!m_player->hasComponent<CInvincibility>())
+    {
+        for (const std::shared_ptr<Entity> &enemy : m_entityManager.getEntities("NPC"))
+        {
+            Vec2 overlap = Physics::GetOverlap(enemy, m_player);
+            if (overlap.x > 0 && overlap.y > 0)
+            {
+                CHealth &health = m_player->getComponent<CHealth>();
+                health.current -= enemy->getComponent<CDamage>().damage;
+
+                Animation &animation = m_player->getComponent<CAnimation>().animation;
+                sf::Sprite &sprite = animation.getSprite();
+                sprite.setColor(sf::Color(255, 255, 255, 128));
+
+                if (health.current <= 0)
+                {
+                    sf::Sound &sfx = m_game->assets().getSound("SLinkDied");
+                    sfx.play();
+
+                    init(m_levelPath);
+                }
+                else
+                {
+                    m_player->addComponent<CInvincibility>(30);
+                    sf::Sound &sfx = m_game->assets().getSound("SLinkDamaged");
+                    sfx.play();
+                }
+            }
+        }
+    }
+}
+
+void Scene_Zelda::swordNPCCollisions()
+{
+    for (const std::shared_ptr<Entity> &sword : m_entityManager.getEntities("Sword"))
+    {
+        if (sword->hasComponent<CDamage>())
+        {
+            for (const std::shared_ptr<Entity> &enemy : m_entityManager.getEntities("NPC"))
+            {
+                Vec2 overlap = Physics::GetOverlap(sword, enemy);
+                if (overlap.x > 0 && overlap.y > 0)
+                {
+                    CHealth &enemyHealth = enemy->getComponent<CHealth>();
+                    CDamage &swordDamage = sword->getComponent<CDamage>();
+
+                    enemyHealth.current -= swordDamage.damage;
+
+                    if (enemyHealth.current <= 0)
+                    {
+                        sf::Sound &sfx = m_game->assets().getSound("SEnemyDied");
+                        sfx.play();
+
+                        Animation &explosion = m_game->assets().getAnimation("Explosion");
+                        enemy->addComponent<CAnimation>(explosion, false);
+
+                        enemy->removeComponent<CBoundingBox>();
+                        enemy->removeComponent<CDamage>();
+                        enemy->removeComponent<CHealth>();
+                    }
+                    else
+                    {
+                        sf::Sound &sfx = m_game->assets().getSound("SEnemyDamaged");
+                        sfx.play();
+                    }
+
+                    sword->removeComponent<CDamage>();
+                }
+            }
+        }
+    }
+}
+
+void Scene_Zelda::entityHeartCollisions()
+{
+    for (const std::shared_ptr<Entity> &heart : m_entityManager.getEntities("Heart"))
+    {
+        if (heart->isActive())
+        {
+            for (const std::shared_ptr<Entity> &entity : m_entityManager.getEntities())
+            {
+                if (entity->tag() == "NPC" || entity->tag() == "Player")
+                {
+                    Vec2 overlap = Physics::GetOverlap(heart, entity);
+                    if (overlap.x > 0 && overlap.y > 0)
+                    {
+                        CHealth &health = entity->getComponent<CHealth>();
+                        health.current = health.max;
+
+                        sf::Sound &sfx = m_game->assets().getSound("SLinkPickupHeart");
+                        sfx.play();
+
+                        heart->destroy();
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Scene_Zelda::blackTileCollisions()
+{
 }
 
 void Scene_Zelda::sAnimation()
@@ -434,19 +666,32 @@ void Scene_Zelda::sAnimation()
 
 void Scene_Zelda::sCamera()
 {
-    // STUDENT TODO:
-    // Implement camera view logic
-
     sf::View view = m_game->window().getView();
+    Vec2 &pPos = m_player->getComponent<CTransform>().pos;
 
     if (m_follow)
     {
-        Vec2 &pPos = m_player->getComponent<CTransform>().pos;
         view.setCenter(pPos.x, pPos.y);
     }
     else
     {
-        // calculate view for room-based camera
+        sf::Vector2u windowSize = m_game->window().getSize();
+        Vec2 wSize = Vec2(windowSize.x, windowSize.y);
+        Vec2 room = Vec2(
+            int(abs(pPos.x) / wSize.x),
+            int(abs(pPos.y) / wSize.y));
+
+        if (pPos.x < 0)
+            room.x = -room.x - 1;
+
+        if (pPos.y < 0)
+            room.y = -room.y - 1;
+
+        Vec2 newCenter;
+        newCenter.x = (room.x * wSize.x) + (wSize.x / 2);
+        newCenter.y = (room.y * wSize.y) + (wSize.y / 2);
+
+        view.setCenter(newCenter.x, newCenter.y);
     }
 
     m_game->window().setView(view);
@@ -554,11 +799,18 @@ void Scene_Zelda::sRender()
             if (e->hasComponent<CFollowPlayer>())
             {
                 Vec2 enemyCenter = e->getComponent<CTransform>().pos;
+                Vec2 home = e->getComponent<CFollowPlayer>().home;
 
                 sf::Vertex line[] = {
                     sf::Vertex(sf::Vector2f(playerCenter.x, playerCenter.y), sf::Color::Black),
                     sf::Vertex(sf::Vector2f(enemyCenter.x, enemyCenter.y), sf::Color::Black)};
                 m_game->window().draw(line, 2, sf::Lines);
+
+                sf::CircleShape homePoint(3.f);
+                homePoint.setFillColor(sf::Color::Black);
+                homePoint.setOrigin(3.f, 3.f);
+                homePoint.setPosition(home.x, home.y);
+                m_game->window().draw(homePoint);
             }
             else if (e->hasComponent<CPatrol>())
             {
