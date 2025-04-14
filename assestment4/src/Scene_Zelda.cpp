@@ -48,6 +48,8 @@ void Scene_Zelda::loadLevel(const std::string &filename)
             std::string tag = "Tile";
             if (animName == "TileHeart")
                 tag = "Heart";
+            else if (animName == "TileBlack")
+                tag = "Portal";
 
             std::shared_ptr<Entity> tile = m_entityManager.addEntity(tag);
             tile->addComponent<CAnimation>(animation, true);
@@ -624,6 +626,43 @@ void Scene_Zelda::entityHeartCollisions()
 
 void Scene_Zelda::blackTileCollisions()
 {
+    CInput &playerInput = m_player->getComponent<CInput>();
+    CTransform &playerTransform = m_player->getComponent<CTransform>();
+
+    const EntityVec &portals = m_entityManager.getEntities("Portal");
+
+    bool playerOverlappingPortal = false;
+
+    for (const auto &portal : portals)
+    {
+        Vec2 overlap = Physics::GetOverlap(m_player, portal);
+        bool isOverlapping = overlap.x > 0 && overlap.y > 0;
+
+        if (isOverlapping)
+        {
+            playerOverlappingPortal = true;
+
+            if (playerInput.canTeleport)
+            {
+
+                std::shared_ptr<Entity> targetPortal;
+                do
+                {
+                    int random = rand() % (portals.size());
+                    targetPortal = portals[random];
+                } while (portal == targetPortal && portals.size() > 1);
+
+                playerTransform.pos = targetPortal->getComponent<CTransform>().pos;
+                playerInput.canTeleport = false;
+                break;
+            }
+        }
+    }
+
+    if (!playerOverlappingPortal && !playerInput.canTeleport)
+    {
+        playerInput.canTeleport = true;
+    }
 }
 
 void Scene_Zelda::sAnimation()
