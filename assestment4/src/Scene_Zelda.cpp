@@ -116,7 +116,9 @@ Vec2 Scene_Zelda::getPosition(int rx, int ry, int tx, int ty) const
 {
     int tileSize = 64;
     sf::Vector2u size = m_game->window().getSize();
-    return Vec2((rx * size.x) + (tx * tileSize / 2), (ry * size.y) + (ty * tileSize / 2));
+    return Vec2(
+        (rx * int(size.x)) + (tx * tileSize / 2),
+        (ry * int(size.y)) + (ty * tileSize / 2));
 }
 
 void Scene_Zelda::spawnPlayer()
@@ -425,7 +427,15 @@ void Scene_Zelda::sStatus()
             if (int(m_currentFrame) > lifeSpan.frameCreated + lifeSpan.lifespan)
             {
                 if (e->tag() == "Sword")
+                {
                     m_player->getComponent<CInput>().canAttack = true;
+                    CState &state = m_player->getComponent<CState>();
+                    size_t idx = state.animation.find("Atk");
+                    if (idx != std::string::npos)
+                    {
+                        state.animation = state.animation.replace(idx, 3, "Stand");
+                    }
+                }
                 e->destroy();
             }
         }
