@@ -169,26 +169,29 @@ void Scene_Play::sMovement()
         transform.scale.x = 1;
     }
 
-    if (input.up && !input.maxHeightReached)
+    if (input.up)
     {
-        // TODO:
-        // Replace -10 and -2 with calculated values based on
-        // m_playerConfig.JUMP config
-        if (input.canJump && state.onGround)
+        if (state.onGround && input.canJump)
         {
             transform.velocity.y = -10;
             state.onGround = false;
             input.canJump = false;
             state.animation = "Jump";
         }
-        else if (!state.onGround && transform.velocity.y < 0)
+        else
         {
-            if (transform.velocity.y > -m_playerConfig.JUMP)
-                transform.velocity.y -= 2;
-            else
-
-                input.maxHeightReached = true;
+            if (!input.maxHeightReached)
+            {
+                if (transform.velocity.y > -m_playerConfig.JUMP)
+                    transform.velocity.y -= 2;
+                else
+                    input.maxHeightReached = true;
+            }
         }
+    }
+    else
+    {
+        input.maxHeightReached = true;
     }
 
     transform.velocity.y += m_player->getComponent<CGravity>().gravity;
@@ -272,13 +275,19 @@ void Scene_Play::sCollision()
         {
             for (const std::shared_ptr<Entity> &tile : m_entityManager.getEntities("Tile"))
             {
-                Vec2 overlap = Physics::GetOverlap(bullet, tile);
-                if (overlap.x >= 0 && overlap.y >= 0)
+                if (tile->hasComponent<CBoundingBox>())
                 {
-                    std::string animName = tile->getComponent<CAnimation>().animation.getName();
-                    if (animName == "Brick")
-                        tile->addComponent<CAnimation>(explosionAnim, false);
-                    bullet->destroy();
+                    Vec2 overlap = Physics::GetOverlap(bullet, tile);
+                    if (overlap.x >= 0 && overlap.y >= 0)
+                    {
+                        std::string animName = tile->getComponent<CAnimation>().animation.getName();
+                        if (animName == "Brick")
+                        {
+                            tile->addComponent<CAnimation>(explosionAnim, false);
+                            tile->removeComponent<CBoundingBox>();
+                        }
+                        bullet->destroy();
+                    }
                 }
             }
         }
@@ -341,6 +350,8 @@ void Scene_Play::sCollision()
                     {
                         tile->addComponent<CAnimation>(explosionAnim, false);
                     }
+
+                    pInput.maxHeightReached = true;
 
                     if (pTransform.velocity.y < 0)
                         pTransform.velocity.y = 0;
