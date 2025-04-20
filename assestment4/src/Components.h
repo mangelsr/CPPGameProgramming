@@ -43,6 +43,7 @@ public:
     bool right = false;
     bool attack = false;
     bool canAttack = true;
+    bool canTeleport = true;
 
     CInput() {}
 };
