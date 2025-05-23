@@ -221,42 +221,71 @@ void Scene_Zelda::sMovement()
     CTransform &transform = m_player->getComponent<CTransform>();
     CState &state = m_player->getComponent<CState>();
 
-    transform.velocity = {0, 0};
-
-    if (!input.left && !input.right)
+    if (input.up && input.down)
     {
-        if (input.up)
+        transform.velocity = {0, 0};
+        auto idx = state.animation.find("Move");
+        if (idx != std::string::npos)
         {
-            transform.velocity.y -= m_playerConfig.SPEED;
+            state.animation.replace(idx, 4, "Stand");
+        }
+    }
+
+    else if (input.up)
+    {
+        if (!input.left && !input.right)
+        {
+            transform.velocity = {0, 0};
+            transform.velocity.y = -m_playerConfig.SPEED;
             state.animation = "LinkMoveUp";
         }
+    }
 
-        if (input.down)
+    else if (input.down)
+    {
+        if (!input.left && !input.right)
         {
-            transform.velocity.y += m_playerConfig.SPEED;
+            transform.velocity = {0, 0};
+            transform.velocity.y = m_playerConfig.SPEED;
             state.animation = "LinkMoveDown";
         }
     }
 
-    if (!input.up && !input.down)
+    if (input.left && input.right)
     {
-        if (input.left)
+        transform.velocity = {0, 0};
+        auto idx = state.animation.find("Move");
+        if (idx != std::string::npos)
         {
+            state.animation.replace(idx, 4, "Stand");
+        }
+    }
+
+    else if (input.left)
+    {
+        if (!input.up && !input.down)
+        {
+            transform.velocity = {0, 0};
             transform.scale.x = -1;
-            transform.velocity.x -= m_playerConfig.SPEED;
+            transform.velocity.x = -m_playerConfig.SPEED;
             state.animation = "LinkMoveRight";
         }
+    }
 
-        if (input.right)
+    else if (input.right)
+    {
+        if (!input.up && !input.down)
         {
+            transform.velocity = {0, 0};
             transform.scale.x = 1;
-            transform.velocity.x += m_playerConfig.SPEED;
+            transform.velocity.x = m_playerConfig.SPEED;
             state.animation = "LinkMoveRight";
         }
     }
 
     if (!input.up && !input.down && !input.left && !input.right)
     {
+        transform.velocity = {0, 0};
         auto idx = state.animation.find("Move");
         if (idx != std::string::npos)
         {
